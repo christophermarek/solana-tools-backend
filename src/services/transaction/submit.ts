@@ -54,7 +54,7 @@ export async function submitTransaction(
     }
 
     // 4. Parse the sender keypair from DB
-    const fromKeypair = getKeypairFromDb(fromWallet);
+    const fromKeypair = keypairRepo.toKeypair(fromWallet.secret_key);
 
     // 5. Get destination public key
     let toPublicKey: PublicKey;
@@ -214,14 +214,6 @@ function formatTransactionResponse(
       )
       : null,
   };
-}
-
-/**
- * Extract Solana keypair from database record
- */
-function getKeypairFromDb(dbKeypair: keypairRepo.DbKeypair): Keypair {
-  const secretKey = bs58.decode(dbKeypair.secret_key);
-  return Keypair.fromSecretKey(secretKey);
 }
 
 /**

@@ -4,6 +4,7 @@
     "@solana/spl-token": "npm:@solana/spl-token",
     "@raydium-io/raydium-sdk": "npm:@raydium-io/raydium-sdk",
     "@project-serum/anchor": "npm:@project-serum/anchor",
+    "@coral-xyz/anchor": "npm:@coral-xyz/anchor",
     "@openbook-dex/openbook": "npm:@openbook-dex/openbook",
     "bn.js": "npm:bn.js",
     "bs58": "npm:bs58",
@@ -20,6 +21,7 @@
     "prompt-sync": "npm:prompt-sync",
     "dotenv": "https://deno.land/std@0.220.1/dotenv/mod.ts",
     "sqlite": "npm:sqlite@^5.0.0",
-    "@db/sqlite": "jsr:@db/sqlite@0.12.0"
+    "@db/sqlite": "jsr:@db/sqlite@0.12.0",
+    "pumpdotfun-repumped-sdk": "npm:pumpdotfun-repumped-sdk"
   }
 }

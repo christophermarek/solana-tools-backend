@@ -11,7 +11,8 @@
     "lint:core": " deno lint --config=.deno-lint-ignore.json src/",
     "lint:skip-tests": " deno lint --ignore='**/*.test.ts' src/",
     "test:solana": " deno test --allow-env --allow-net --allow-read --allow-import --allow-ffi --unstable-ffi --no-check --unstable-sloppy-imports --import-map=import_map.json src/services/solana/test/index.test.ts",
-    "test:solana:timeout": "perl -e 'alarm 30; exec @ARGV' 'deno' 'task' 'test:solana' || echo 'Test timed out after 30 seconds'"
+    "test:solana:timeout": "perl -e 'alarm 30; exec @ARGV' 'deno' 'task' 'test:solana' || echo 'Test timed out after 30 seconds'",
+    "test:pump": " deno test --allow-env --allow-net --allow-read --allow-import --allow-ffi --unstable-ffi --no-check --unstable-sloppy-imports --import-map=import_map.json src/services/pump-fun/test/index.test.ts"
   },
   "nodeModulesDir": "auto",
   "importMap": "import_map.json",

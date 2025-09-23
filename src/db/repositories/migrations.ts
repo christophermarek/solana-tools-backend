@@ -16,8 +16,6 @@ export async function getExecutedMigrations(): Promise<Migration[]> {
     `).all() as Migration[];
     return result;
   } catch (_error) {
-    // If migrations table doesn't exist yet, return empty array
-    // The first migration (000_create_migrations_table) will create it
     logging.info(
       "migration",
       "Migrations table doesn't exist yet, returning empty array",

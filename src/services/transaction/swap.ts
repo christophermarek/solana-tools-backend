@@ -251,7 +251,12 @@ export async function submitSwapTransaction(
     }
 
     // 5. Parse the sender keypair from DB
-    const fromKeypair = getKeypairFromDb(fromWallet);
+    const fromKeypair = keypairRepo.toKeypair(fromWallet.secret_key);
+    if (!fromKeypair) {
+      throw new Error(
+        `Sender wallet with ID ${dbTransaction.from_wallet_id} has no keypair`,
+      );
+    }
 
     // 6. Update transaction status to PENDING
     await txRepo.updateTransactionStatus(dbTransaction.id, "PENDING");
@@ -414,14 +419,6 @@ export async function submitSwapTransaction(
     logging.error(requestId, "Failed to submit swap transaction", error);
     throw error;
   }
-}
-
-/**
- * Extract Solana keypair from database record
- */
-function getKeypairFromDb(dbKeypair: keypairRepo.DbKeypair): Keypair {
-  const secretKey = bs58.decode(dbKeypair.secret_key);
-  return Keypair.fromSecretKey(secretKey);
 }
 
 export default {

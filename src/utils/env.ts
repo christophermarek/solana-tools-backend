@@ -3,17 +3,13 @@ import { load } from "https://deno.land/std@0.220.1/dotenv/mod.ts";
 
 let config: Env | null = null;
 
-export async function getConfig(): Promise<Env> {
+export function getConfig(): Env {
   if (config) return config;
+  throw new Error("Config not loaded");
+}
 
-  try {
-    config = await loadEnv();
-    console.log("Configuration loaded successfully");
-    return config;
-  } catch (error) {
-    console.error("Failed to load configuration:", error);
-    throw error;
-  }
+export function clearConfig(): void {
+  config = null;
 }
 
 const envSchema = z.object({
@@ -21,10 +17,8 @@ const envSchema = z.object({
     "development",
   ),
 
-  RPC_URL: z.string().optional(),
-  RPC_URLS: z.string().transform((val) => val.split(",")).default(
-    "https://api.mainnet-beta.solana.com",
-  ),
+  RPC_URL: z.string().min(1, "RPC URL is required"),
+  RPC_URLS: z.string().transform((val) => val.split(",")),
   RPC_TIMEOUT_MS: z.coerce.number().positive().default(30000),
   RPC_HEALTH_CHECK_INTERVAL_MS: z.coerce.number().positive().default(60000),
 
@@ -38,10 +32,11 @@ const envSchema = z.object({
   RPC_REQUESTS_PER_SECOND: z.coerce.number().positive().default(5),
 
   DB_PATH: z.string().min(1, "Database path is required"),
-  ADMIN_API_KEY: z.string().min(
-    32,
-    "Admin API key should be at least 32 characters",
-  ).default("change_me_to_a_secure_random_string_in_production"),
+
+  PUMP_FUN_WALLET_PRIVATE_KEY: z.string().min(
+    1,
+    "Pump Fun wallet private key is required",
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -62,14 +57,15 @@ export async function loadEnv(): Promise<Env> {
       HELIUS_DEVNET_RPC: Deno.env.get("HELIUS_DEVNET_RPC"),
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
       DB_PATH: Deno.env.get("DB_PATH"),
-      ADMIN_API_KEY: Deno.env.get("ADMIN_API_KEY"),
+      PUMP_FUN_WALLET_PRIVATE_KEY: Deno.env.get("PUMP_FUN_WALLET_PRIVATE_KEY"),
     });
 
+    config = env;
     return env;
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("Environment validation failed:");
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         console.error(`- ${err.path.join(".")}: ${err.message}`);
       });
     } else {

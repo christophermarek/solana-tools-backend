@@ -1,6 +1,6 @@
 import { Application } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
-import { getConfig } from "./utils/env.ts";
+import { getConfig, loadEnv } from "./utils/env.ts";
 import { initializeDb } from "./db/client.ts";
 import { registerRoutes } from "./routes/index.ts";
 import * as solanaService from "./services/solana/index.ts";
@@ -32,7 +32,7 @@ registerRoutes(app);
 async function initialize() {
   logging.info("system", "Starting application initialization...");
 
-  await getConfig();
+  await loadEnv();
   await initializeDb();
 
   await solanaService.init();

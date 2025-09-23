@@ -271,9 +271,18 @@ export async function updateBalanceByPublicKey(
   return result;
 }
 
-export function toKeypair(dbKeypair: DbKeypair): Keypair {
-  const secretKey = bs58.decode(dbKeypair.secret_key);
-  return Keypair.fromSecretKey(secretKey);
+export function toKeypair(secretKey: string): Keypair | null {
+  logging.info("keypair", "Converting secret key to keypair", { secretKey });
+  try {
+    const secretKeyBytes = bs58.decode(secretKey);
+    logging.info("keypair", "Secret key decoded", { secretKeyBytes });
+    return Keypair.fromSecretKey(secretKeyBytes);
+  } catch (error) {
+    logging.error("keypair", "Failed to convert secret key to keypair", {
+      error,
+    });
+    return null;
+  }
 }
 
 export async function listAll(): Promise<DbKeypair[]> {
