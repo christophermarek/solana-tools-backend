@@ -1,0 +1,9 @@
+# This file specifies files that should be ignored by the Deno linter
+# Format: file/path:rule1,rule2,...
+
+# Example:
+# src/legacy/oldFile.ts:no-explicit-any,no-var 
+
+# Ignore all test files for no-unused-vars and other common test issues
+src/services/solana/test/**/*.test.ts:no-unused-vars,prefer-const,require-await,no-explicit-any
+

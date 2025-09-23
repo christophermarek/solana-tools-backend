@@ -1,0 +1,16 @@
+# deno
+.deno
+
+# node
+node_modules
+
+.env
+
+tmp
+DS_Store
+# deno files
+.deno
+
+# node files
+node_modules
+

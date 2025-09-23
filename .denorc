@@ -1,0 +1,11 @@
+{
+  "allow": {
+    "env": true,
+    "read": true,
+    "write": true,
+    "net": true,
+    "ffi": true,
+    "sys": true
+  },
+  "importMap": "./import_map.json"
+} 

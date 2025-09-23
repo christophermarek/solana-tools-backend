@@ -1,0 +1,25 @@
+{
+  "imports": {
+    "@solana/web3.js": "npm:@solana/web3.js",
+    "@solana/spl-token": "npm:@solana/spl-token",
+    "@raydium-io/raydium-sdk": "npm:@raydium-io/raydium-sdk",
+    "@project-serum/anchor": "npm:@project-serum/anchor",
+    "@openbook-dex/openbook": "npm:@openbook-dex/openbook",
+    "bn.js": "npm:bn.js",
+    "bs58": "npm:bs58",
+    "jito-ts": "npm:jito-ts",
+    "zod": "npm:zod",
+    "std/": "https://deno.land/std@0.220.1/",
+    "std/path/": "https://deno.land/std@0.220.1/path/",
+    "std/path/mod.ts": "https://deno.land/std@0.220.1/path/mod.ts",
+    "std/dotenv/": "https://deno.land/std@0.220.1/dotenv/",
+    "std/dotenv/mod.ts": "https://deno.land/std@0.220.1/dotenv/mod.ts",
+    "cliffy/": "https://deno.land/x/cliffy@v1.0.0-rc.3/",
+    "cliffy/prompt": "https://deno.land/x/cliffy@v1.0.0-rc.3/prompt/mod.ts",
+    "@solana/buffer-layout": "npm:@solana/buffer-layout",
+    "prompt-sync": "npm:prompt-sync",
+    "dotenv": "https://deno.land/std@0.220.1/dotenv/mod.ts",
+    "sqlite": "npm:sqlite@^5.0.0",
+    "@types/sqlite": "npm:@types/sqlite@^3.1.8"
+  }
+}

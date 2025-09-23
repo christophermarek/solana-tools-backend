@@ -1,0 +1,65 @@
+import { Router } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import { validateRequest } from "../middleware/validate.ts";
+import {
+  bulkEditWalletsSchema,
+  createWalletsSchema,
+  importWalletSchema,
+  walletParamSchema,
+} from "../schemas/wallet.schema.ts";
+
+import {
+  bulkEditWallets,
+  createWallets,
+  getBalance,
+  getWallet,
+  importWallet,
+  listWallets,
+  refreshWalletBalance,
+} from "../controllers/wallet/index.ts";
+
+const router = new Router({
+  prefix: "/api/v1/wallets",
+});
+
+router.post(
+  "/",
+  validateRequest({ bodySchema: createWalletsSchema }),
+  createWallets,
+);
+
+router.post(
+  "/import",
+  validateRequest({ bodySchema: importWalletSchema }),
+  importWallet,
+);
+
+router.get(
+  "/",
+  listWallets,
+);
+
+router.post(
+  "/bulk-edit",
+  validateRequest({ bodySchema: bulkEditWalletsSchema }),
+  bulkEditWallets,
+);
+
+router.get(
+  "/:publicKey",
+  validateRequest({ paramsSchema: walletParamSchema }),
+  getWallet,
+);
+
+router.get(
+  "/:publicKey/balance",
+  validateRequest({ paramsSchema: walletParamSchema }),
+  getBalance,
+);
+
+router.post(
+  "/:publicKey/balance/refresh",
+  validateRequest({ paramsSchema: walletParamSchema }),
+  refreshWalletBalance,
+);
+
+export const walletRouter = router;

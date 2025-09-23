@@ -1,0 +1,10 @@
+{
+  "files": {
+    "include": ["src/**/*.ts"],
+    "exclude": ["**/*.test.ts"]
+  },
+  "rules": {
+    "exclude": ["no-console"],
+    "include": []
+  }
+}
