@@ -20,6 +20,6 @@
     "prompt-sync": "npm:prompt-sync",
     "dotenv": "https://deno.land/std@0.220.1/dotenv/mod.ts",
     "sqlite": "npm:sqlite@^5.0.0",
-    "@types/sqlite": "npm:@types/sqlite@^3.1.8"
+    "@db/sqlite": "jsr:@db/sqlite@0.12.0"
   }
 }

@@ -1,5 +1,5 @@
 import * as logging from "../../utils/logging.ts";
-import { initializeConfig } from "../../utils/config.ts";
+import { getConfig } from "../../utils/env.ts";
 // Types for rate limiter
 type RequestWindow = {
   method: string;
@@ -15,7 +15,7 @@ let _enabled = true;
  * Initialize the rate limiter
  */
 export async function init(): Promise<void> {
-  const config = await initializeConfig();
+  const config = await getConfig();
   _requestsPerSecond = config.RPC_REQUESTS_PER_SECOND;
   _enabled = config.NODE_ENV === "production" || _requestsPerSecond > 0;
 

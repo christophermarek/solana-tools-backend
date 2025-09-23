@@ -1,5 +1,18 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
+import type { BindValue, TransactionListOptions } from "../types.ts";
+
+export enum TokenType {
+  SOL = "SOL",
+  WSOL = "WSOL",
+}
+
+export enum TransactionStatus {
+  DRAFT = "DRAFT",
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  FAILED = "FAILED",
+}
 
 export interface DbTransaction {
   id: number;
@@ -8,8 +21,8 @@ export interface DbTransaction {
   external_destination: string | null;
   amount: number;
   fee_amount: number | null;
-  token_type: string; // 'SOL' | 'WSOL' | etc
-  status: string; // 'DRAFT' | 'PENDING' | 'CONFIRMED' | 'FAILED'
+  token_type: TokenType;
+  status: TransactionStatus;
   signature: string | null;
   created_at: string;
   updated_at: string;
@@ -24,8 +37,8 @@ export interface CreateTransactionParams {
   external_destination?: string | null;
   amount: number;
   fee_amount?: number | null;
-  token_type: string;
-  status: string;
+  token_type: TokenType;
+  status: TransactionStatus;
   signature?: string | null;
   error_message?: string | null;
   is_external?: boolean;
@@ -34,7 +47,7 @@ export interface CreateTransactionParams {
 
 export async function createTransaction(
   params: CreateTransactionParams,
-  requestId = "system",
+  requestId: string = "system",
 ): Promise<DbTransaction> {
   const client = getClient();
 
@@ -57,8 +70,8 @@ export async function createTransaction(
         transaction_data
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
-    const result = stmt.run(
+
+    const result = await stmt.run(
       params.from_wallet_id,
       params.to_wallet_id,
       params.external_destination ?? null,
@@ -69,11 +82,11 @@ export async function createTransaction(
       params.signature ?? null,
       params.error_message ?? null,
       params.is_external === undefined ? 0 : (params.is_external ? 1 : 0),
-      params.transaction_data ? JSON.stringify(params.transaction_data) : null
+      params.transaction_data ? JSON.stringify(params.transaction_data) : null,
     );
 
-    const insertedId = result.lastInsertRowid;
-    const newTransaction = client.prepare(`
+    const insertedId = result as number;
+    const newTransaction = await client.prepare(`
       SELECT * FROM transactions WHERE id = ?
     `).get(insertedId) as DbTransaction;
 
@@ -90,7 +103,7 @@ export async function getTransactionById(
 ): Promise<DbTransaction | null> {
   const client = getClient();
   try {
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT * FROM transactions WHERE id = ?
     `).get(id) as DbTransaction | undefined;
 
@@ -107,7 +120,7 @@ export async function getTransactionBySignature(
 ): Promise<DbTransaction | null> {
   const client = getClient();
   try {
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT * FROM transactions WHERE signature = ?
     `).get(signature) as DbTransaction | undefined;
 
@@ -133,7 +146,7 @@ export async function updateTransactionStatus(
 
   try {
     const updates: string[] = ["status = ?", "updated_at = CURRENT_TIMESTAMP"];
-    const values: any[] = [status];
+    const values: (string | number | null)[] = [status];
 
     if (signature !== undefined) {
       updates.push("signature = ?");
@@ -153,9 +166,9 @@ export async function updateTransactionStatus(
       WHERE id = ?
     `;
 
-    client.prepare(query).run(...values);
-    
-    const result = client.prepare(`
+    await client.prepare(query).run(...values);
+
+    const result = await client.prepare(`
       SELECT * FROM transactions WHERE id = ?
     `).get(id) as DbTransaction;
     return result;
@@ -179,13 +192,13 @@ export async function updateTransactionFee(
   try {
     const fee_amount = feeAmount;
 
-    client.prepare(`
+    await client.prepare(`
       UPDATE transactions 
       SET fee_amount = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(fee_amount, id);
 
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT * FROM transactions WHERE id = ?
     `).get(id) as DbTransaction;
     return result;
@@ -201,13 +214,13 @@ export async function updateTransactionFee(
 
 export async function getWalletTransactions(
   walletId: number,
-  limit = 20,
-  offset = 0,
-  requestId = "system",
+  limit: number = 20,
+  offset: number = 0,
+  requestId: string = "system",
 ): Promise<DbTransaction[]> {
   const client = getClient();
   try {
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT * FROM transactions 
       WHERE from_wallet_id = ? OR to_wallet_id = ?
       ORDER BY created_at DESC
@@ -226,19 +239,14 @@ export async function getWalletTransactions(
 }
 
 export async function listTransactions(
-  options: {
-    status?: string;
-    tokenType?: string;
-    limit?: number;
-    offset?: number;
-  } = {},
-  requestId = "system",
+  options: TransactionListOptions = {},
+  requestId: string = "system",
 ): Promise<DbTransaction[]> {
   const client = getClient();
 
   try {
     let query = `SELECT * FROM transactions WHERE 1=1`;
-    const values: any[] = [];
+    const values: BindValue[] = [];
 
     if (options.status) {
       query += ` AND status = ?`;
@@ -262,7 +270,9 @@ export async function listTransactions(
       values.push(options.offset);
     }
 
-    const result = client.prepare(query).all(...values) as DbTransaction[];
+    const result = await client.prepare(query).all(
+      ...values,
+    ) as DbTransaction[];
     return result;
   } catch (error) {
     logging.error(requestId, "Failed to list transactions", error);
@@ -276,7 +286,7 @@ export async function getWalletTransactionCount(
 ): Promise<number> {
   const client = getClient();
   try {
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT COUNT(*) as count FROM transactions 
       WHERE from_wallet_id = ? OR to_wallet_id = ?
     `).get(walletId, walletId) as { count: number };
@@ -300,13 +310,13 @@ export async function updateTransactionData(
   const client = getClient();
 
   try {
-    client.prepare(`
+    await client.prepare(`
       UPDATE transactions 
       SET transaction_data = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(JSON.stringify(data), id);
 
-    const result = client.prepare(`
+    const result = await client.prepare(`
       SELECT * FROM transactions WHERE id = ?
     `).get(id) as DbTransaction;
     return result;

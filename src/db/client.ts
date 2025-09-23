@@ -1,10 +1,11 @@
-import { DatabaseSync } from "node:sqlite";
-import { initializeConfig } from "../utils/config.ts";
+import { Database } from "@db/sqlite";
+import { getConfig } from "../utils/env.ts";
 import * as logging from "../utils/logging.ts";
 import { ensureDir } from "std/fs/mod.ts";
 import { migrate } from "./migrate.ts";
+import type { DatabaseClient } from "./types.ts";
 
-let client: DatabaseSync | null = null;
+let client: DatabaseClient | null = null;
 
 export async function initializeDb() {
   const requestId = "system";
@@ -18,21 +19,21 @@ export async function initializeDb() {
     return client;
   }
 
-  const config = await initializeConfig();
+  const config = await getConfig();
   logging.info(requestId, "Loaded environment variables");
 
   try {
     const dbPath = config.DB_PATH;
-    const dbDir = dbPath.substring(0, dbPath.lastIndexOf('/'));
-    
+    const dbDir = dbPath.substring(0, dbPath.lastIndexOf("/"));
+
     if (dbDir) {
       await ensureDir(dbDir);
       logging.info(requestId, `Created database directory: ${dbDir}`);
     }
 
     logging.info(requestId, `Opening SQLite database: ${dbPath}`);
-    client = new DatabaseSync(dbPath);
-    
+    client = new Database(dbPath);
+
     client.exec(`
       PRAGMA foreign_keys = ON;
       PRAGMA journal_mode = WAL;
@@ -40,13 +41,12 @@ export async function initializeDb() {
       PRAGMA cache_size = 1000;
       PRAGMA temp_store = MEMORY;
     `);
-    
+
     logging.info(requestId, "Database connection established successfully");
-    
-    // Check and run migrations automatically
+
     logging.info(requestId, "Checking for pending migrations...");
     try {
-      await migrate("up");
+      await migrate();
       logging.info(requestId, "Database migrations completed successfully");
     } catch (error) {
       logging.error(requestId, "Failed to run migrations", error);
@@ -63,14 +63,14 @@ export async function initializeDb() {
   return client;
 }
 
-export function getClient(): DatabaseSync {
+export function getClient(): DatabaseClient {
   if (!client) {
     throw new Error("Database not initialized. Call initializeDb first.");
   }
   return client;
 }
 
-export async function closeDb() {
+export function closeDb() {
   const requestId = "system";
   if (client) {
     logging.info(requestId, "Closing database connection...");

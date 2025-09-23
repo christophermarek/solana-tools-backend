@@ -1,6 +1,21 @@
 import { z } from "zod";
 import { load } from "https://deno.land/std@0.220.1/dotenv/mod.ts";
 
+let config: Env | null = null;
+
+export async function getConfig(): Promise<Env> {
+  if (config) return config;
+
+  try {
+    config = await loadEnv();
+    console.log("Configuration loaded successfully");
+    return config;
+  } catch (error) {
+    console.error("Failed to load configuration:", error);
+    throw error;
+  }
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default(
     "development",

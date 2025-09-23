@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import * as logging from "../../utils/logging.ts";
-import { initializeConfig } from "../../utils/config.ts";
+import { getConfig } from "../../utils/env.ts";
 
 type ConnectionStatus = {
   url: string;
@@ -32,7 +32,7 @@ export function init(): Promise<void> {
  */
 async function _initializeConnections(): Promise<void> {
   let rpcUrls: string[] = [];
-  const config = await initializeConfig();
+  const config = await getConfig();
 
   // Determine which Helius RPC endpoint to use based on NODE_ENV
   const isProduction = config.NODE_ENV === "production";
@@ -123,7 +123,7 @@ async function _initializeConnections(): Promise<void> {
  * Setup periodic health checks
  */
 async function setupHealthChecks(): Promise<void> {
-  const config = await initializeConfig();
+  const config = await getConfig();
 
   // Clear existing interval if any
   if (_healthCheckInterval !== null) {
