@@ -1,4 +1,3 @@
-import { assert } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import * as path from "https://deno.land/std@0.220.1/path/mod.ts";
 
 // This file serves as an entry point to run all Solana service tests

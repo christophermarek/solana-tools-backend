@@ -173,10 +173,10 @@ export async function createDraftTransaction(
       tokenType: dbTransaction.token_type as TokenType,
       status: dbTransaction.status as any,
       signature: dbTransaction.signature,
-      createdAt: dbTransaction.created_at,
-      updatedAt: dbTransaction.updated_at,
+      createdAt: new Date(dbTransaction.created_at),
+      updatedAt: new Date(dbTransaction.updated_at),
       errorMessage: dbTransaction.error_message,
-      isExternal: dbTransaction.is_external,
+      isExternal: dbTransaction.is_external === 1,
       totalCost: dbTransaction.fee_amount !== null
         ? Number(dbTransaction.amount) + Number(dbTransaction.fee_amount)
         : null,

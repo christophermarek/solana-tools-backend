@@ -1,11 +1,14 @@
-import { assert } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import * as path from "https://deno.land/std@0.220.1/path/mod.ts";
+import { logWalletInfo } from "./fixtures.ts";
 
 console.log("Running Pump Fun service tests...");
 
 const testModules = [
   "./sdk.test.ts",
   "./create-and-buy.test.ts",
+  "./buy.test.ts",
+  "./sell.test.ts",
+  "./getSPLBalance.test.ts",
 ];
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
@@ -28,6 +31,8 @@ async function runTests() {
     console.log("🧪 Pump Fun Service Test Suite");
     console.log("----------------------------------------");
 
+    await logWalletInfo();
+
     const loadedModules = [];
     for (const testModule of testModules) {
       const modulePath = path.join(__dirname, testModule);
@@ -41,8 +46,8 @@ async function runTests() {
           }, 5000);
         });
 
-        const module = await Promise.race([importPromise, timeoutPromise]);
-        loadedModules.push({ module, name: testModule });
+        const _module = await Promise.race([importPromise, timeoutPromise]);
+        loadedModules.push({ module: _module, name: testModule });
         console.log(`✓ Prepared ${testModule}`);
       } catch (importError) {
         console.error(
@@ -84,9 +89,6 @@ async function runTests() {
     );
     console.log("----------------------------------------");
     console.log("The actual tests will be executed by Deno's test runner.\n");
-    console.log(
-      "Tests may still time out during execution if they take too long to connect to Solana.",
-    );
     console.log(
       "This is normal and the tests have been modified to handle timeouts gracefully.",
     );

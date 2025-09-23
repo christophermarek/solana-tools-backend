@@ -17,7 +17,7 @@ import { PUMP_FUN_ERRORS } from "./errors.ts";
 
 export async function createAndBuy(
   creator: Keypair,
-  meta: CreateTokenMetadata,
+  tokenMeta: CreateTokenMetadata,
   buyAmountSol: number,
 ): Promise<
   [{
@@ -35,15 +35,26 @@ export async function createAndBuy(
     }
 
     const mint = Keypair.generate();
+    const buyAmountLamports = BigInt(solanaService.solToLamports(buyAmountSol));
+    const priorityFee = getPriorityFee();
+    logging.info(TAG, "Create and buy parameters", {
+      creator: creator.publicKey.toString(),
+      mint: mint.publicKey.toString(),
+      tokenMeta,
+      buyAmountSol,
+      buyAmountLamports: buyAmountLamports.toString(),
+      slippageBps: SLIPPAGE_BPS.toString(),
+      priorityFee,
+    });
     logging.info(TAG, "Mint: ", mint.publicKey.toString());
 
     const res = await sdk.trade.createAndBuy(
       creator,
       mint,
-      meta,
-      BigInt(solanaService.solToLamports(buyAmountSol)),
+      tokenMeta,
+      buyAmountLamports,
       SLIPPAGE_BPS,
-      getPriorityFee(),
+      priorityFee,
     );
     if (!res.success) {
       logging.error(
@@ -74,6 +85,9 @@ export async function createAndBuy(
       "Created! Pump link:",
       pumpLink,
     );
+    if (!getIsMainnetRpc()) {
+      logging.info(TAG, "[WARN] pump.fun does not work on devnet RPC");
+    }
 
     return [
       {

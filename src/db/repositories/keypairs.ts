@@ -272,10 +272,8 @@ export async function updateBalanceByPublicKey(
 }
 
 export function toKeypair(secretKey: string): Keypair | null {
-  logging.info("keypair", "Converting secret key to keypair", { secretKey });
   try {
     const secretKeyBytes = bs58.decode(secretKey);
-    logging.info("keypair", "Secret key decoded", { secretKeyBytes });
     return Keypair.fromSecretKey(secretKeyBytes);
   } catch (error) {
     logging.error("keypair", "Failed to convert secret key to keypair", {

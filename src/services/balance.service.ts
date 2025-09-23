@@ -80,7 +80,7 @@ export async function getWalletBalances(
           const updatedKeypair = await keypairRepo.updateBalance(wallet.id, {
             sol_balance: solLamports,
             wsol_balance: wsolLamports,
-            balance_status: 'FRESH', // Mark as FRESH after update
+            balance_status: "FRESH", // Mark as FRESH after update
           });
 
           // Log the values for debugging
@@ -184,7 +184,7 @@ export async function getBalanceByPublicKey(
       {
         sol_balance: solLamports,
         wsol_balance: wsolLamports,
-        balance_status: 'FRESH', // Mark as FRESH after update
+        balance_status: "FRESH", // Mark as FRESH after update
       },
     );
 

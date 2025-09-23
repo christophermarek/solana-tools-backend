@@ -3,17 +3,11 @@ import * as solanaService from "./index.ts";
 import * as connectionService from "./connection.ts";
 import { PublicKey } from "@solana/web3.js";
 
-/**
- * Run diagnostics and validation on Solana service during server startup
- */
 export async function validateSolanaServiceOnStartup(): Promise<boolean> {
   try {
     logging.info("system", "🔍 Running Solana service startup validation...");
 
-    // Check connection status
     await validateConnections();
-
-    // Verify balance functionality
     await validateBalanceFunctionality();
 
     logging.info("system", "✅ Solana service validation complete", {

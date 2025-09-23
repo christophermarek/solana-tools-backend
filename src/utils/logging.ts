@@ -181,6 +181,15 @@ export function formatWalletResponse(kp: keypairRepo.DbKeypair) {
   };
 }
 
+function safeStringify(obj: unknown): string {
+  return JSON.stringify(obj, (_key, value) => {
+    if (typeof value === "bigint") {
+      return value.toString();
+    }
+    return value;
+  }, 2);
+}
+
 export default {
   debug,
   info,
@@ -192,4 +201,5 @@ export default {
   logResponse,
   formatErrorResponse,
   formatWalletResponse,
+  safeStringify,
 };

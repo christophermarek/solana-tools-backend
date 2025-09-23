@@ -1,12 +1,9 @@
-import {
-  assertEquals,
-  assertExists,
-} from "https://deno.land/std@0.220.1/assert/mod.ts";
+import { assertExists } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import { loadEnv } from "../../../utils/env.ts";
 import { createAndBuy } from "../create-and-buy.ts";
-import { PUMP_FUN_ERRORS } from "../errors.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import { type CreateTokenMetadata } from "pumpdotfun-repumped-sdk";
+import logging from "../../../utils/logging.ts";
 
 Deno.test({
   name: "Test createAndBuy with PUMP_FUN_WALLET_PRIVATE_KEY as creator",
@@ -31,6 +28,19 @@ Deno.test({
     const buyAmountSol = 0.01;
 
     const [result, error] = await createAndBuy(creator, meta, buyAmountSol);
+    if (result !== null) {
+      logging.info(
+        "createAndBuy",
+        logging.safeStringify({
+          creator: creator.publicKey.toString(),
+          meta,
+          buyAmountSol,
+          curve: result.curve,
+          mint: result.mint.publicKey.toString(),
+          pumpLink: result.pumpLink,
+        }),
+      );
+    }
 
     if (error) {
       throw new Error(`createAndBuy failed with error: ${error}`);

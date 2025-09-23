@@ -89,11 +89,6 @@ export {
   getTokenSwapQuote,
 } from "./swap.ts";
 
-export {
-  // Utils
-  chunkArray,
-} from "./utils.ts";
-
 // Rate limiter
 export { waitForRateLimit } from "./rate-limiter.ts";
 
@@ -135,9 +130,6 @@ export default {
   getTokenSwapQuote: swapService.getTokenSwapQuote,
   buildTokenSwapIx: swapService.buildTokenSwapIx,
   executeTokenSwap: swapService.executeTokenSwap,
-
-  // Utils
-  chunkArray: utilsService.chunkArray,
 
   // Rate limiter
   waitForRateLimit: rateLimiter.waitForRateLimit,
