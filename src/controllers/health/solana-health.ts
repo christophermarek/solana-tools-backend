@@ -1,45 +1,57 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import {
-  getActiveRpcUrl,
-  getConnectionStatus,
-} from "../../services/solana/connection.ts";
+import solanaService from "../../services/solana/index.ts";
 
-export const solanaHealthCheck: RouterMiddleware<string> = (ctx) => {
+export const solanaHealthCheck: RouterMiddleware<string> = async (ctx) => {
   const requestId = getRequestId(ctx);
   logging.info(requestId, "Solana health check endpoint accessed");
 
   try {
-    const connectionStatus = getConnectionStatus();
-    const activeRpcUrl = getActiveRpcUrl();
+    const [connection, connectionError] = await solanaService.getConnection();
 
-    const healthyConnections = connectionStatus.filter((status) =>
-      status.healthy
-    );
-    const totalConnections = connectionStatus.length;
-    const isHealthy = healthyConnections.length > 0;
+    if (connectionError || !connection) {
+      const errorResponse = {
+        status: "unhealthy",
+        activeRpcUrl: "",
+        totalConnections: 0,
+        healthyConnections: 0,
+        connections: [],
+        error: connectionError || "Connection failed",
+      };
+
+      logging.warn(requestId, "Solana connection unhealthy", {
+        error: connectionError,
+      });
+      ResponseUtil.success(ctx, errorResponse);
+      return;
+    }
+
+    const [isValid, validationError] = await solanaService.validateConnection();
+
+    const isHealthy = isValid && !validationError;
+    const activeRpcUrl = connection.rpcEndpoint;
 
     const solanaHealth = {
       status: isHealthy ? "healthy" : "unhealthy",
       activeRpcUrl,
-      totalConnections,
-      healthyConnections: healthyConnections.length,
-      connections: connectionStatus.map((status) => ({
-        url: status.url,
-        healthy: status.healthy,
-        latencyMs: status.latencyMs,
-        lastChecked: new Date(status.lastChecked).toISOString(),
-        errorCount: status.errorCount,
-        lastError: status.lastError,
-      })),
+      totalConnections: 1,
+      healthyConnections: isHealthy ? 1 : 0,
+      connections: [{
+        url: activeRpcUrl,
+        healthy: isHealthy,
+        latencyMs: null,
+        lastChecked: new Date().toISOString(),
+        errorCount: validationError ? 1 : 0,
+        lastError: validationError || null,
+      }],
     };
 
     logging.info(requestId, "Solana health check completed", {
       status: solanaHealth.status,
       activeRpcUrl,
-      healthyConnections: healthyConnections.length,
-      totalConnections,
+      healthyConnections: solanaHealth.healthyConnections,
+      totalConnections: solanaHealth.totalConnections,
     });
 
     ResponseUtil.success(ctx, solanaHealth);
