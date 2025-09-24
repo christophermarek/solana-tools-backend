@@ -63,15 +63,13 @@ export const createAndBuyToken: RouterMiddleware<string> = async (ctx) => {
     );
 
     if (error) {
+      const errorMessage = typeof error === "string" ? error : error.message;
       logging.error(
         requestId,
-        `Failed to create and buy token: ${error}`,
+        `Failed to create and buy token: ${errorMessage}`,
         error,
       );
-      ResponseUtil.serverError(
-        ctx,
-        new Error(`Failed to create and buy token: ${error}`),
-      );
+      ResponseUtil.serverError(ctx, new Error(errorMessage));
       return;
     }
 

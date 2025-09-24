@@ -56,8 +56,9 @@ export const buyToken: RouterMiddleware<string> = async (ctx) => {
     const [result, error] = await buy(keypair, mintKeypair, buyAmountSol);
 
     if (error) {
-      logging.error(requestId, `Failed to buy token: ${error}`, error);
-      ResponseUtil.serverError(ctx, new Error(`Failed to buy token: ${error}`));
+      const errorMessage = typeof error === "string" ? error : error.message;
+      logging.error(requestId, `Failed to buy token: ${errorMessage}`, error);
+      ResponseUtil.serverError(ctx, new Error(errorMessage));
       return;
     }
 

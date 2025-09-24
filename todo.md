@@ -1,7 +1,6 @@
 
 
 Goals:
-3. test basic API to manage:
 2. add pump fun to API
 3. add jito bundle to service
 4. add jito bundle to API

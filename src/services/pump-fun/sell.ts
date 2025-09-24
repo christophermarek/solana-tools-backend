@@ -2,7 +2,7 @@ import { getSDK } from "./_index.ts";
 import * as solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { Keypair, type VersionedTransactionResponse } from "@solana/web3.js";
-import { PumpFunErrors } from "./_errors.ts";
+import { PumpFunErrors, SDKError } from "./_errors.ts";
 import { BondingCurveAccount } from "pumpdotfun-repumped-sdk";
 import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
@@ -75,23 +75,24 @@ export async function sell(
     );
 
     if (!res.success) {
+      const errorMessage = res.error as string;
       logging.error(
         TAG,
         "Failed to sell token",
-        new Error(res.error as string),
+        new Error(errorMessage),
       );
-      return [null, PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN];
+      return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
     }
 
     if (!res.results) {
       logging.info(TAG, "No results from sell");
-      return [null, PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN];
+      return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_SELL];
     }
 
     const curve = await sdk.token.getBondingCurveAccount(mint.publicKey);
     if (!curve) {
       logging.info(TAG, "No curve from sell");
-      return [null, PUMP_FUN_ERRORS.ERROR_GETTING_BONDING_CURVE_ACCOUNT];
+      return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_SELL];
     }
 
     logging.info(TAG, "Sell successful");
@@ -105,6 +106,9 @@ export async function sell(
     ];
   } catch (error) {
     logging.error(TAG, "Failed to sell token", error);
-    return [null, PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN];
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error occurred during sell";
+    return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }

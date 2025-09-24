@@ -61,11 +61,9 @@ export const sellToken: RouterMiddleware<string> = async (ctx) => {
     const [result, error] = await sell(keypair, mintKeypair, sellParams);
 
     if (error) {
-      logging.error(requestId, `Failed to sell token: ${error}`, error);
-      ResponseUtil.serverError(
-        ctx,
-        new Error(`Failed to sell token: ${error}`),
-      );
+      const errorMessage = typeof error === "string" ? error : error.message;
+      logging.error(requestId, `Failed to sell token: ${errorMessage}`, error);
+      ResponseUtil.serverError(ctx, new Error(errorMessage));
       return;
     }
 

@@ -1,13 +1,12 @@
 import * as connectionService from "../solana/connection.ts";
 import * as logging from "../../utils/logging.ts";
 import { PublicKey } from "@solana/web3.js";
-import { PumpFunErrors } from "./_errors.ts";
+import { PumpFunErrors, SDKError } from "./_errors.ts";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TAG,
   TOKEN_PROGRAM_ID,
 } from "./_constants.ts";
-import { PUMP_FUN_ERRORS } from "./_errors.ts";
 
 // SPL is short for Solana Program Library
 export async function getSPLBalance(
@@ -38,6 +37,9 @@ export async function getSPLBalance(
     return [balance, null];
   } catch (error) {
     logging.error(TAG, "Failed to get SPL token balance", error);
-    return [null, PUMP_FUN_ERRORS.ERROR_GETTING_SPL_BALANCE];
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error occurred while getting SPL balance";
+    return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }

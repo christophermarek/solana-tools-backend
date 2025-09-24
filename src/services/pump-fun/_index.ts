@@ -2,7 +2,7 @@ import { PumpFunSDK } from "pumpdotfun-repumped-sdk";
 import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { getConfig } from "../../utils/env.ts";
-import { PUMP_FUN_ERRORS, PumpFunErrors } from "./_errors.ts";
+import { PumpFunErrors, SDKError } from "./_errors.ts";
 import * as logging from "../../utils/logging.ts";
 import { TAG } from "./_constants.ts";
 
@@ -53,6 +53,9 @@ function createSDK(
     return [sdk, null];
   } catch (error) {
     logging.error(TAG, "Error creating Pump Fun SDK", error);
-    return [null, PUMP_FUN_ERRORS.ERROR_INITIALIZING_SDK];
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error occurred while initializing SDK";
+    return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }

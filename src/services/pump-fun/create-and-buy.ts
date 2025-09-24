@@ -2,7 +2,7 @@ import { getSDK } from "./_index.ts";
 import * as solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { Keypair, type VersionedTransactionResponse } from "@solana/web3.js";
-import { PumpFunErrors } from "./_errors.ts";
+import { PumpFunErrors, SDKError } from "./_errors.ts";
 import {
   BondingCurveAccount,
   type CreateTokenMetadata,
@@ -57,23 +57,24 @@ export async function createAndBuy(
       priorityFee,
     );
     if (!res.success) {
+      const errorMessage = res.error as string;
       logging.error(
         TAG,
         "Failed to create and buy",
-        new Error(res.error as string),
+        new Error(errorMessage),
       );
-      return [null, PUMP_FUN_ERRORS.ERROR_CREATING_AND_BUYING];
+      return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
     }
 
     if (!res.results) {
       logging.info(TAG, "No results from create and buy");
-      return [null, PUMP_FUN_ERRORS.ERROR_CREATING_AND_BUYING];
+      return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_CREATE_AND_BUY];
     }
 
     const curve = await sdk.token.getBondingCurveAccount(mint.publicKey);
     if (!curve) {
       logging.info(TAG, "No curve from create and buy");
-      return [null, PUMP_FUN_ERRORS.ERROR_GETTING_BONDING_CURVE_ACCOUNT];
+      return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_CREATE_AND_BUY];
     }
 
     const pumpLink = `https://pump.fun/${mint.publicKey.toBase58()}?cluster=${
@@ -100,6 +101,9 @@ export async function createAndBuy(
     ];
   } catch (error) {
     logging.error(TAG, "Failed to create and buy", error);
-    return [null, PUMP_FUN_ERRORS.ERROR_CREATING_AND_BUYING];
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error occurred during create and buy";
+    return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }
