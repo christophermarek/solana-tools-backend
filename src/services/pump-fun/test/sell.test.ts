@@ -5,10 +5,10 @@ import {
 import { loadEnv } from "../../../utils/env.ts";
 import { buy } from "../buy.ts";
 import { sell } from "../sell.ts";
-import { getSPLBalance } from "../getSPLBalance.ts";
+import { getSPLBalance } from "../get-spl-balance.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import { createTestToken, logWalletInfo } from "./fixtures.ts";
-import { PUMP_FUN_ERRORS } from "../errors.ts";
+import { PUMP_FUN_ERRORS } from "../_errors.ts";
 import * as logging from "../../../utils/logging.ts";
 import { Keypair, PublicKey } from "@solana/web3.js";
 
@@ -69,7 +69,7 @@ Deno.test({
     const [sellResult, sellError] = await sell(
       trader,
       testToken.mint,
-      sellAmountSol,
+      { sellAmountSol },
     );
 
     if (sellError) {
@@ -121,7 +121,9 @@ Deno.test({
     } as Keypair;
     const sellAmountSol = 0.005;
 
-    const [sellResult, sellError] = await sell(seller, fakeMint, sellAmountSol);
+    const [sellResult, sellError] = await sell(seller, fakeMint, {
+      sellAmountSol,
+    });
 
     assertEquals(sellResult, null, "Sell result should be null on failure");
     assertExists(sellError, "Sell error should exist");
@@ -132,6 +134,103 @@ Deno.test({
     );
 
     logging.info("sell-test", "Sell failed as expected", { error: sellError });
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: "Test sell by SPL token amount - sell specific number of tokens",
+  async fn() {
+    await logWalletInfo();
+
+    const env = await loadEnv();
+    const trader = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    assertExists(trader, "Trader keypair should be created from private key");
+
+    const testToken = await createTestToken();
+    logging.info("sell-test", "Using test token for SPL amount test", {
+      mint: testToken.mint.publicKey.toString(),
+      pumpLink: testToken.pumpLink,
+    });
+
+    const initialBalance = await getSPLBalance(
+      trader.publicKey,
+      testToken.mint.publicKey,
+    );
+    if (initialBalance[0] === null) {
+      throw new Error(`Failed to get initial balance: ${initialBalance[1]}`);
+    }
+
+    logging.info("sell-test", "Initial balance for SPL test", {
+      balance: initialBalance[0],
+    });
+
+    const buyAmountSol = 0.005;
+    const [buyResult, buyError] = await buy(
+      trader,
+      testToken.mint,
+      buyAmountSol,
+    );
+
+    if (buyError) {
+      throw new Error(`Buy failed with error: ${buyError}`);
+    }
+
+    assertExists(buyResult, "Buy result should exist");
+    logging.info("sell-test", "Buy successful for SPL test", { buyAmountSol });
+
+    const afterBuyBalance = await getSPLBalance(
+      trader.publicKey,
+      testToken.mint.publicKey,
+    );
+    if (afterBuyBalance[0] === null) {
+      throw new Error(`Failed to get after-buy balance: ${afterBuyBalance[1]}`);
+    }
+
+    logging.info("sell-test", "After buy balance for SPL test", {
+      balance: afterBuyBalance[0],
+    });
+
+    const sellAmountSPL = Math.floor(afterBuyBalance[0] * 0.5);
+    const [sellResult, sellError] = await sell(
+      trader,
+      testToken.mint,
+      { sellAmountSPL },
+    );
+
+    if (sellError) {
+      throw new Error(`Sell failed with error: ${sellError}`);
+    }
+
+    assertExists(sellResult, "Sell result should exist");
+    assertExists(
+      sellResult.transactionResult,
+      "Transaction result should exist",
+    );
+    assertExists(sellResult.curve, "Curve should exist");
+
+    logging.info("sell-test", "Sell by SPL amount successful", {
+      sellAmountSPL,
+      transactionResult: sellResult.transactionResult,
+    });
+
+    const finalBalance = await getSPLBalance(
+      trader.publicKey,
+      testToken.mint.publicKey,
+    );
+    if (finalBalance[0] === null) {
+      throw new Error(`Failed to get final balance: ${finalBalance[1]}`);
+    }
+
+    logging.info("sell-test", "Final balance for SPL test", {
+      balance: finalBalance[0],
+    });
+    assertEquals(
+      finalBalance[0] < afterBuyBalance[0],
+      true,
+      "Final balance should be less than after-buy balance",
+    );
   },
   sanitizeResources: false,
   sanitizeOps: false,

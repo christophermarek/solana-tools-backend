@@ -41,9 +41,12 @@ export const refreshWalletBalance: RouterMiddleware<string> = async (ctx) => {
     );
 
     ResponseUtil.success(ctx, {
-      refreshed: result.successful,
-      failed: result.failed,
-      total: result.successful + result.failed,
+      meta: {
+        refreshed: result.successful,
+        failed: result.failed,
+        total: result.successful + result.failed,
+      },
+      wallets: result.wallets,
     });
 
     logging.debug(

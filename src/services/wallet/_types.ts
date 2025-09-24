@@ -67,4 +67,18 @@ export interface ListWalletsResult {
 export interface RefreshBalancesResult {
   successful: number;
   failed: number;
+  wallets: Array<{
+    id: number;
+    publicKey: string;
+    label?: string;
+    success: boolean;
+    error?: string;
+    balance?: {
+      solBalance: number;
+      wsolBalance: number;
+      totalBalance: number;
+      lastBalanceUpdate: Date;
+      balanceStatus: string;
+    };
+  }>;
 }

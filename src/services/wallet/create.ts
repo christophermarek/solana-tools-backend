@@ -1,6 +1,5 @@
 import { Keypair } from "@solana/web3.js";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { MAX_WALLETS_PER_CREATE_REQUEST, TAG } from "./_constants.ts";
@@ -9,7 +8,6 @@ import {
   CreateWalletResult,
   WalletWithBalance,
 } from "./_types.ts";
-import { type BalanceData, mapWalletWithBalanceFromDb } from "./_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 
 export async function createWallets(
@@ -57,51 +55,19 @@ export async function createWallets(
         requestId ?? TAG,
       );
 
-      try {
-        const balance: BalanceData | null = await solanaService
-          .getBalanceByPublicKey(
-            publicKey,
-            requestId ?? TAG,
-          );
-
-        if (balance) {
-          wallets.push(mapWalletWithBalanceFromDb(dbKeypair, balance));
-        } else {
-          const fallbackWallet: WalletWithBalance = {
-            id: dbKeypair.id,
-            publicKey: dbKeypair.public_key,
-            label: dbKeypair.label,
-            isActive: Boolean(dbKeypair.is_active),
-            createdAt: new Date(dbKeypair.created_at),
-            solBalance: 0,
-            wsolBalance: 0,
-            totalBalance: 0,
-            lastBalanceUpdate: new Date(),
-            balanceStatus: "UNKNOWN",
-          };
-          wallets.push(fallbackWallet);
-        }
-      } catch (balanceError) {
-        logging.warn(
-          requestId ?? TAG,
-          `Failed to fetch balance for wallet ${publicKey}, creating with zero balance`,
-          balanceError,
-        );
-
-        const fallbackWallet: WalletWithBalance = {
-          id: dbKeypair.id,
-          publicKey: dbKeypair.public_key,
-          label: dbKeypair.label,
-          isActive: Boolean(dbKeypair.is_active),
-          createdAt: new Date(dbKeypair.created_at),
-          solBalance: 0,
-          wsolBalance: 0,
-          totalBalance: 0,
-          lastBalanceUpdate: new Date(),
-          balanceStatus: "UNKNOWN",
-        };
-        wallets.push(fallbackWallet);
-      }
+      const newWallet: WalletWithBalance = {
+        id: dbKeypair.id,
+        publicKey: dbKeypair.public_key,
+        label: dbKeypair.label,
+        isActive: Boolean(dbKeypair.is_active),
+        createdAt: new Date(dbKeypair.created_at),
+        solBalance: 0,
+        wsolBalance: 0,
+        totalBalance: 0,
+        lastBalanceUpdate: new Date(),
+        balanceStatus: "UNKNOWN",
+      };
+      wallets.push(newWallet);
     } catch (error) {
       logging.error(
         requestId ?? TAG,

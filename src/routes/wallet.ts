@@ -48,12 +48,6 @@ router.get(
   getWallet,
 );
 
-router.get(
-  "/:publicKey/balance",
-  validateRequest({ paramsSchema: walletParamSchema }),
-  getBalance,
-);
-
 router.post(
   "/balance/refresh",
   validateRequest({ bodySchema: refreshWalletBalancesSchema }),

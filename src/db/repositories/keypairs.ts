@@ -42,19 +42,20 @@ export async function create(
       INSERT INTO keypairs (
         public_key,
         secret_key,
-        label
-      ) VALUES (?, ?, ?)
+        label,
+        balance_status
+      ) VALUES (?, ?, ?, ?)
     `);
 
-    const result = await stmt.run(
+    await stmt.run(
       keypair.publicKey.toString(),
       bs58.encode(keypair.secretKey),
       label,
+      BalanceStatus.UNKNOWN,
     );
-    const insertedId = result as number;
     const newKeypair = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ?
-    `).get(insertedId) as DbKeypair;
+      SELECT * FROM keypairs WHERE public_key = ?
+    `).get(keypair.publicKey.toString()) as DbKeypair;
 
     return newKeypair;
   } catch (error) {
@@ -456,19 +457,18 @@ export async function importWallet(
       secret_key,
       label,
       balance_status
-    ) VALUES (?, ?, ?)
+    ) VALUES (?, ?, ?, ?)
   `);
 
-    const result = await stmt.run(
+    await stmt.run(
       publicKey,
       secretKey,
       label,
       BalanceStatus.UNKNOWN,
     );
-    const insertedId = result as number;
     const newWallet = await client.prepare(`
-    SELECT * FROM keypairs WHERE id = ?
-    `).get(insertedId) as DbKeypair;
+    SELECT * FROM keypairs WHERE public_key = ?
+    `).get(publicKey) as DbKeypair;
     return [newWallet, null];
   } catch (error) {
     logging.error("keypair", `Failed to import wallet`, error);

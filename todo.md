@@ -1,10 +1,17 @@
 
 
 Goals:
-1. finish pumpfun sdk integration
-2. add jito bundle to pump service
 3. test basic API to manage:
+2. add pump fun to API
+3. add jito bundle to service
+4. add jito bundle to API
+5. finalize solana service SIMPLIFY ( balance, swap, transfer (ANY))
+6. add solana service to API
+7. Test API V1, good copy finish
   -  pumpfun launch
   -  wallets
   -  basic transactions
-4. delete shit code, identify if v1 is ready
+
+Future
+- Volume bot
+- KEEEP CHANGES SIMPLE, we want backend to be flexible

@@ -1,4 +1,5 @@
 import solanaService from "../solana/index.ts";
+import * as keypairRepo from "../../db/repositories/keypairs.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { TAG } from "./_constants.ts";
@@ -14,19 +15,80 @@ export async function refreshWalletBalances(
       `Refreshing balances for ${walletIds.length} wallets`,
     );
 
-    const balances = await solanaService.getWalletBalances(
-      walletIds,
-      requestId ?? TAG,
-    );
+    const results: RefreshBalancesResult["wallets"] = [];
+    let successful = 0;
+    let failed = 0;
+
+    for (const walletId of walletIds) {
+      try {
+        const dbKeypair = await keypairRepo.findById(
+          walletId,
+          requestId ?? TAG,
+        );
+        if (!dbKeypair) {
+          results.push({
+            id: walletId,
+            publicKey: "Unknown",
+            success: false,
+            error: "Wallet not found",
+          });
+          failed++;
+          continue;
+        }
+
+        const balance = await solanaService.getBalanceByPublicKey(
+          dbKeypair.public_key,
+          requestId ?? TAG,
+        );
+
+        if (balance) {
+          results.push({
+            id: walletId,
+            publicKey: dbKeypair.public_key,
+            label: dbKeypair.label,
+            success: true,
+            balance: {
+              solBalance: balance.solBalance,
+              wsolBalance: balance.wsolBalance,
+              totalBalance: balance.totalBalance,
+              lastBalanceUpdate: balance.lastUpdated,
+              balanceStatus: balance.balanceStatus,
+            },
+          });
+          successful++;
+        } else {
+          results.push({
+            id: walletId,
+            publicKey: dbKeypair.public_key,
+            label: dbKeypair.label,
+            success: false,
+            error: "Failed to fetch balance",
+          });
+          failed++;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+        results.push({
+          id: walletId,
+          publicKey: "Unknown",
+          success: false,
+          error: errorMessage,
+        });
+        failed++;
+      }
+    }
 
     logging.info(
       requestId ?? TAG,
-      `Successfully refreshed ${balances.length}/${walletIds.length} wallet balances`,
+      `Successfully refreshed ${successful}/${walletIds.length} wallet balances`,
     );
 
     return [{
-      successful: balances.length,
-      failed: walletIds.length - balances.length,
+      successful,
+      failed,
+      wallets: results,
     }, null];
   } catch (error) {
     logging.error(requestId ?? TAG, "Failed to refresh wallet balances", error);
