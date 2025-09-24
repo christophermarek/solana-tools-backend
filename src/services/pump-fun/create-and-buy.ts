@@ -29,7 +29,7 @@ export async function createAndBuy(
 > {
   logging.info(TAG, "Creating token & first buy");
   try {
-    const [sdk, error] = getSDK();
+    const [sdk, error] = getSDK(creator);
     if (error) {
       return [null, error];
     }

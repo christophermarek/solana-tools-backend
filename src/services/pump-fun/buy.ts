@@ -19,7 +19,7 @@ export async function buy(
 > {
   logging.info(TAG, "Buying token");
   try {
-    const [sdk, error] = getSDK();
+    const [sdk, error] = getSDK(buyer);
     if (error) {
       return [null, error];
     }

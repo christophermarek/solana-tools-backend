@@ -3,7 +3,7 @@ import {
   assertExists,
 } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import { loadEnv } from "../../../utils/env.ts";
-import { getSPLBalance } from "../getSPLBalance.ts";
+import { getSPLBalance } from "../get-spl-balance.ts";
 import { buy } from "../buy.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import { createTestToken, logWalletInfo } from "./fixtures.ts";

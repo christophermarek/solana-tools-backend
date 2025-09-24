@@ -4,10 +4,10 @@ import {
 } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import { loadEnv } from "../../../utils/env.ts";
 import { buy } from "../buy.ts";
-import { getSPLBalance } from "../getSPLBalance.ts";
+import { getSPLBalance } from "../get-spl-balance.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import { createTestToken, logWalletInfo } from "./fixtures.ts";
-import { PUMP_FUN_ERRORS } from "../errors.ts";
+import { PUMP_FUN_ERRORS } from "../_errors.ts";
 import * as logging from "../../../utils/logging.ts";
 import { Keypair, PublicKey } from "@solana/web3.js";
 

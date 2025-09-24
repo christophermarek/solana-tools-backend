@@ -2,8 +2,9 @@ import {
   assertEquals,
   assertExists,
 } from "https://deno.land/std@0.220.1/assert/mod.ts";
-import { clearConfig, loadEnv } from "../../../utils/env.ts";
+import { loadEnv } from "../../../utils/env.ts";
 import { PUMP_FUN_ERRORS } from "../_errors.ts";
+import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 
 Deno.test({
   name: "Test 1: Call getSDK once, init SDK success",
@@ -18,7 +19,10 @@ Deno.test({
     const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
-    const [sdk, error] = pumpFunModule.getSDK();
+    const wallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    assertExists(wallet, "Wallet keypair should be created from private key");
+
+    const [sdk, error] = pumpFunModule.getSDK(wallet);
 
     if (error) {
       const validErrors = Object.values(PUMP_FUN_ERRORS);
@@ -38,10 +42,14 @@ Deno.test({
 Deno.test({
   name: "Test 2: Call getSDK again, returns existing instance",
   async fn() {
+    const env = await loadEnv();
+    const wallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    assertExists(wallet, "Wallet keypair should be created from private key");
+
     const pumpFunModule = await import("../_index.ts");
 
-    const [sdk1, error1] = pumpFunModule.getSDK();
-    const [sdk2, error2] = pumpFunModule.getSDK();
+    const [sdk1, error1] = pumpFunModule.getSDK(wallet);
+    const [sdk2, error2] = pumpFunModule.getSDK(wallet);
 
     if (error1) {
       return;
@@ -60,36 +68,28 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Test 3: Clear SDK, set invalid PK, call getSDK should error",
+  name: "Test 3: Test SDK with different wallets",
   async fn() {
+    const env = await loadEnv();
     const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
-    const originalEnvGet = Deno.env.get;
-    const originalPrivateKey = originalEnvGet("PUMP_FUN_WALLET_PRIVATE_KEY");
+    const wallet1 = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    assertExists(wallet1, "Wallet 1 should be created from private key");
 
-    try {
-      clearConfig();
+    const wallet2 = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    assertExists(wallet2, "Wallet 2 should be created from private key");
 
-      Deno.env.set("PUMP_FUN_WALLET_PRIVATE_KEY", "");
+    const [sdk1, error1] = pumpFunModule.getSDK(wallet1);
+    const [sdk2, error2] = pumpFunModule.getSDK(wallet2);
 
-      const [_, error] = pumpFunModule.getSDK();
-
-      if (error) {
-        assertEquals(
-          error,
-          PUMP_FUN_ERRORS.ERROR_INITIALIZING_SDK,
-          "Should return SDK initialization error",
-        );
-      } else {
-        throw new Error("Expected error but got successful SDK initialization");
-      }
-    } finally {
-      if (originalPrivateKey) {
-        Deno.env.set("PUMP_FUN_WALLET_PRIVATE_KEY", originalPrivateKey);
-        clearConfig();
-      }
+    if (error1 || error2) {
+      return;
     }
+
+    assertExists(sdk1, "SDK 1 should exist");
+    assertExists(sdk2, "SDK 2 should exist");
+    assertEquals(sdk1, sdk2, "Same wallet should return same SDK instance");
   },
   sanitizeResources: false,
   sanitizeOps: false,

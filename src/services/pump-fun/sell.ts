@@ -25,7 +25,7 @@ export async function sell(
   logging.info(TAG, "Selling token", params);
 
   try {
-    const [sdk, error] = getSDK();
+    const [sdk, error] = getSDK(seller);
     if (error) {
       return [null, error];
     }
