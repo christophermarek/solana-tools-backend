@@ -3,7 +3,7 @@ import { getSPLBalance } from "../../services/pump-fun/get-spl-balance.ts";
 import { GetTokenBalancePayload } from "../../schemas/pump-fun.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import * as keypairRepo from "../../db/repositories/keypairs.ts";
+import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";
 import { PublicKey } from "@solana/web3.js";
 
 export const getTokenBalance: RouterMiddleware<string> = async (ctx) => {
@@ -15,28 +15,22 @@ export const getTokenBalance: RouterMiddleware<string> = async (ctx) => {
       .value as GetTokenBalancePayload;
     const { walletId, mintPublicKey } = body;
 
-    const wallet = await keypairRepo.findById(walletId, requestId);
-    if (!wallet) {
-      logging.error(
-        requestId,
-        `Wallet with ID ${walletId} not found`,
-        new Error("Wallet not found"),
-      );
-      ResponseUtil.notFound(ctx, `Wallet with ID ${walletId} not found`);
+    const [validation, validationError] = await validateWalletAndGetKeypair(
+      walletId,
+      requestId,
+    );
+    if (validationError) {
+      if (validationError === "Wallet not found") {
+        ResponseUtil.notFound(ctx, `Wallet with ID ${walletId} not found`);
+      } else if (validationError === "Wallet is inactive") {
+        ResponseUtil.badRequest(ctx, `Wallet with ID ${walletId} is inactive`);
+      } else {
+        ResponseUtil.serverError(ctx, new Error(validationError));
+      }
       return;
     }
 
-    if (!wallet.is_active) {
-      logging.error(
-        requestId,
-        `Wallet with ID ${walletId} is inactive`,
-        new Error("Wallet is inactive"),
-      );
-      ResponseUtil.badRequest(ctx, `Wallet with ID ${walletId} is inactive`);
-      return;
-    }
-
-    const walletPublicKey = new PublicKey(wallet.public_key);
+    const walletPublicKey = new PublicKey(validation!.wallet.public_key);
     const mintPublicKeyObj = new PublicKey(mintPublicKey);
 
     const [balance, error] = await getSPLBalance(
@@ -55,7 +49,7 @@ export const getTokenBalance: RouterMiddleware<string> = async (ctx) => {
 
     const responseData = {
       walletId,
-      walletPublicKey: wallet.public_key,
+      walletPublicKey: validation!.wallet.public_key,
       mintPublicKey,
       balance,
     };

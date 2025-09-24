@@ -1,7 +1,7 @@
 import * as logging from "../../utils/logging.ts";
 import * as solanaService from "./index.ts";
-import * as connectionService from "./connection.ts";
 import { PublicKey } from "@solana/web3.js";
+import { TAG } from "./_constants.ts";
 
 export async function validateSolanaServiceOnStartup(): Promise<boolean> {
   try {
@@ -22,59 +22,45 @@ export async function validateSolanaServiceOnStartup(): Promise<boolean> {
   }
 }
 
-/**
- * Validate Solana connections for all configured RPC endpoints
- */
 async function validateConnections(): Promise<void> {
   try {
-    const status = connectionService.getConnectionStatus();
-    const healthyCount = status.filter((endpoint) => endpoint.healthy).length;
-
-    logging.info("system", "Solana RPC connection status", {
-      total: status.length,
-      healthy: healthyCount,
-      unhealthy: status.length - healthyCount,
-    });
-
-    if (healthyCount === 0) {
-      throw new Error("No healthy Solana RPC endpoints found");
-    }
-
-    // Check connection can be retrieved
-    const connection = await solanaService.getConnection();
-    if (!connection) {
+    const [connection, connectionError] = await solanaService.getConnection();
+    if (connectionError || !connection) {
       throw new Error("Failed to retrieve Solana connection");
     }
 
-    logging.info("system", "✅ Solana connection validation passed");
+    logging.info(TAG, "✅ Solana connection validation passed");
   } catch (error) {
-    logging.error("system", "Failed to validate Solana connections", error);
+    logging.error(TAG, "Failed to validate Solana connection", error);
     throw error;
   }
 }
 
-/**
- * Validate balance functionality works with RPC connection
- */
 async function validateBalanceFunctionality(): Promise<void> {
   try {
-    // Use a well-known address (e.g., Solana system program)
+    // Use a well-known address (Solana system program)
     const knownAddress = new PublicKey("11111111111111111111111111111111");
 
-    logging.info("system", "Testing Solana balance fetch functionality");
+    logging.info(TAG, "Testing Solana balance fetch functionality");
 
-    // Test SOL balance fetch
-    const balance = await solanaService.getSolBalance(knownAddress);
-
-    logging.info("system", "Successfully fetched Solana balance", {
-      address: knownAddress.toString(),
-      balanceSol: solanaService.lamportsToSol(balance),
+    const [balanceResult, balanceError] = await solanaService.getSolBalance({
+      publicKey: knownAddress,
+      requestId: TAG,
     });
 
-    logging.info("system", "✅ Solana balance functionality validation passed");
+    if (balanceError) {
+      throw new Error(`Failed to fetch balance: ${balanceError}`);
+    }
+
+    logging.info(TAG, "Successfully fetched Solana balance", {
+      address: knownAddress.toString(),
+      balanceSol: solanaService.lamportsToSol(balanceResult.balance),
+    });
+
+    logging.info(TAG, "✅ Solana balance functionality validation passed");
   } catch (error) {
     logging.error(
-      "system",
+      TAG,
       "Failed to validate Solana balance functionality",
       error,
     );

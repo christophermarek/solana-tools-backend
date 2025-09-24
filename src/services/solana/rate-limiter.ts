@@ -1,62 +1,67 @@
 import * as logging from "../../utils/logging.ts";
 import { getConfig } from "../../utils/env.ts";
-// Types for rate limiter
+import { TAG } from "./_constants.ts";
+import { SOLANA_ERRORS, SolanaErrors } from "./_errors.ts";
+import { RateLimitResult } from "./_types.ts";
 type RequestWindow = {
   method: string;
   timestamps: number[];
 };
 
-// Private variables
 const _requestWindows: Map<string, RequestWindow> = new Map();
 let _requestsPerSecond = 5; // Default
 let _enabled = true;
 
-/**
- * Initialize the rate limiter
- */
-export async function init(): Promise<void> {
-  const config = await getConfig();
-  _requestsPerSecond = config.RPC_REQUESTS_PER_SECOND;
-  _enabled = config.NODE_ENV === "production" || _requestsPerSecond > 0;
+export async function init(): Promise<[boolean, null] | [null, SolanaErrors]> {
+  try {
+    const config = await getConfig();
+    _requestsPerSecond = config.RPC_REQUESTS_PER_SECOND;
+    _enabled = config.NODE_ENV === "production" || _requestsPerSecond > 0;
 
-  logging.info("system", "Initialized Solana RPC rate limiter", {
-    enabled: _enabled,
-    requestsPerSecond: _requestsPerSecond,
-    environment: config.NODE_ENV,
-  });
+    logging.info(TAG, "Initialized Solana RPC rate limiter", {
+      enabled: _enabled,
+      requestsPerSecond: _requestsPerSecond,
+      environment: config.NODE_ENV,
+    });
+
+    return [true, null];
+  } catch (error) {
+    logging.error(TAG, "Failed to initialize rate limiter", error);
+    return [null, SOLANA_ERRORS.ERROR_SERVICE_INITIALIZATION_FAILED];
+  }
 }
 
-/**
- * Check if a request can be made for the given method
- */
-export function canMakeRequest(method: string, requestId?: string): boolean {
-  if (!_enabled) return true;
+export function canMakeRequest(
+  method: string,
+  requestId?: string,
+): [RateLimitResult, null] | [null, SolanaErrors] {
+  if (!_enabled) {
+    return [{ canMakeRequest: true, waitTimeMs: 0 }, null];
+  }
 
   const now = Date.now();
   const windowKey = method;
   const window = _requestWindows.get(windowKey) || { method, timestamps: [] };
 
-  // Remove timestamps older than 1 second
   window.timestamps = window.timestamps.filter((ts) => now - ts < 1000);
 
-  // Check if we're under the limit
   const canRequest = window.timestamps.length < _requestsPerSecond;
+  const waitTimeMs = canRequest
+    ? 0
+    : Math.max(0, 1000 - (now - (window.timestamps[0] || now)));
 
   if (!canRequest && requestId) {
-    logging.warn(requestId || "system", "Rate limit reached for Solana RPC", {
+    logging.warn(requestId || TAG, "Rate limit reached for Solana RPC", {
       method,
       currentRate: window.timestamps.length,
       limit: _requestsPerSecond,
-      waitTimeMs: 1000 - (now - (window.timestamps[0] || now)),
+      waitTimeMs,
     });
   }
 
-  return canRequest;
+  return [{ canMakeRequest: canRequest, waitTimeMs }, null];
 }
 
-/**
- * Record a request for the given method
- */
 export function recordRequest(method: string): void {
   if (!_enabled) return;
 
@@ -64,19 +69,13 @@ export function recordRequest(method: string): void {
   const windowKey = method;
   const window = _requestWindows.get(windowKey) || { method, timestamps: [] };
 
-  // Add current timestamp
   window.timestamps.push(now);
 
-  // Remove timestamps older than 1 second
   window.timestamps = window.timestamps.filter((ts) => now - ts < 1000);
 
-  // Update the window
   _requestWindows.set(windowKey, window);
 }
 
-/**
- * Get the time to wait before making another request
- */
 export function getWaitTime(method: string): number {
   if (!_enabled) return 0;
 
@@ -88,30 +87,30 @@ export function getWaitTime(method: string): number {
     return 0;
   }
 
-  // Sort timestamps to get the oldest one
   const oldestTimestamp = window.timestamps.sort((a, b) => a - b)[0];
 
-  // Calculate time to wait until the oldest timestamp is more than 1 second old
   return Math.max(0, 1000 - (now - oldestTimestamp));
 }
 
-/**
- * Wait until a request can be made
- */
 export async function waitForRateLimit(
   method: string,
   requestId?: string,
-): Promise<void> {
-  if (!_enabled) return;
-
-  // Check if we need to wait
-  if (canMakeRequest(method, requestId)) {
-    recordRequest(method);
-    return;
+): Promise<[void, null] | [null, SolanaErrors]> {
+  if (!_enabled) {
+    return [undefined, null];
   }
 
-  // Calculate wait time
-  const waitTimeMs = getWaitTime(method);
+  const [rateLimitResult, rateLimitError] = canMakeRequest(method, requestId);
+  if (rateLimitError) {
+    return [null, rateLimitError];
+  }
+
+  if (rateLimitResult.canMakeRequest) {
+    recordRequest(method);
+    return [undefined, null];
+  }
+
+  const waitTimeMs = rateLimitResult.waitTimeMs;
 
   if (waitTimeMs > 0) {
     if (requestId) {
@@ -121,15 +120,11 @@ export async function waitForRateLimit(
       });
     }
 
-    // Wait for the required time
     await new Promise((resolve) => setTimeout(resolve, waitTimeMs));
-
-    // Record the request
-    recordRequest(method);
-  } else {
-    // We're good to go, record the request
-    recordRequest(method);
   }
+
+  recordRequest(method);
+  return [undefined, null];
 }
 
 export default {

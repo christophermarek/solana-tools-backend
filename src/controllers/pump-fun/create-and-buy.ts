@@ -3,7 +3,7 @@ import { createAndBuy } from "../../services/pump-fun/create-and-buy.ts";
 import { CreateAndBuyPayload } from "../../schemas/pump-fun.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import * as keypairRepo from "../../db/repositories/keypairs.ts";
+import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";
 
 export const createAndBuyToken: RouterMiddleware<string> = async (ctx) => {
   const requestId = getRequestId(ctx);
@@ -14,40 +14,22 @@ export const createAndBuyToken: RouterMiddleware<string> = async (ctx) => {
       .value as CreateAndBuyPayload;
     const { walletId, tokenMeta, buyAmountSol } = body;
 
-    const wallet = await keypairRepo.findById(walletId, requestId);
-    if (!wallet) {
-      logging.error(
-        requestId,
-        `Wallet with ID ${walletId} not found`,
-        new Error("Wallet not found"),
-      );
-      ResponseUtil.notFound(ctx, `Wallet with ID ${walletId} not found`);
+    const [validation, validationError] = await validateWalletAndGetKeypair(
+      walletId,
+      requestId,
+    );
+    if (validationError) {
+      if (validationError === "Wallet not found") {
+        ResponseUtil.notFound(ctx, `Wallet with ID ${walletId} not found`);
+      } else if (validationError === "Wallet is inactive") {
+        ResponseUtil.badRequest(ctx, `Wallet with ID ${walletId} is inactive`);
+      } else {
+        ResponseUtil.serverError(ctx, new Error(validationError));
+      }
       return;
     }
 
-    if (!wallet.is_active) {
-      logging.error(
-        requestId,
-        `Wallet with ID ${walletId} is inactive`,
-        new Error("Wallet is inactive"),
-      );
-      ResponseUtil.badRequest(ctx, `Wallet with ID ${walletId} is inactive`);
-      return;
-    }
-
-    const keypair = keypairRepo.toKeypair(wallet.secret_key);
-    if (!keypair) {
-      logging.error(
-        requestId,
-        `Failed to convert wallet ${walletId} to keypair`,
-        new Error("Failed to convert wallet to keypair"),
-      );
-      ResponseUtil.serverError(
-        ctx,
-        new Error("Failed to convert wallet to keypair"),
-      );
-      return;
-    }
+    const keypair = validation!.keypair;
 
     const fullTokenMeta = {
       ...tokenMeta,

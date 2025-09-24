@@ -1,5 +1,8 @@
 import { Wallet, WalletWithBalance } from "./_types.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
+import * as keypairRepo from "../../db/repositories/keypairs.ts";
+import { Keypair } from "@solana/web3.js";
+import logging from "../../utils/logging.ts";
 
 export interface BalanceData {
   id: number;
@@ -69,4 +72,45 @@ export function mapWalletWithBalanceFromDb(
     lastBalanceUpdate: balance.lastUpdated,
     balanceStatus: balance.balanceStatus,
   };
+}
+
+export interface WalletValidationData {
+  wallet: DbKeypair;
+  keypair: Keypair;
+}
+
+export async function validateWalletAndGetKeypair(
+  walletId: number,
+  requestId: string,
+): Promise<[WalletValidationData, null] | [null, string]> {
+  const wallet = await keypairRepo.findById(walletId, requestId);
+  if (!wallet) {
+    logging.error(
+      requestId,
+      `Wallet with ID ${walletId} not found`,
+      new Error("Wallet not found"),
+    );
+    return [null, "Wallet not found"];
+  }
+
+  if (!wallet.is_active) {
+    logging.error(
+      requestId,
+      `Wallet with ID ${walletId} is inactive`,
+      new Error("Wallet is inactive"),
+    );
+    return [null, "Wallet is inactive"];
+  }
+
+  const keypair = keypairRepo.toKeypair(wallet.secret_key);
+  if (!keypair) {
+    logging.error(
+      requestId,
+      `Failed to convert wallet ${walletId} to keypair`,
+      new Error("Failed to convert wallet to keypair"),
+    );
+    return [null, "Failed to convert wallet to keypair"];
+  }
+
+  return [{ wallet, keypair }, null];
 }

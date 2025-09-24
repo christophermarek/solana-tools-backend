@@ -18,9 +18,7 @@ const envSchema = z.object({
   ),
 
   RPC_URL: z.string().min(1, "RPC URL is required"),
-  RPC_URLS: z.string().transform((val) => val.split(",")),
   RPC_TIMEOUT_MS: z.coerce.number().positive().default(30000),
-  RPC_HEALTH_CHECK_INTERVAL_MS: z.coerce.number().positive().default(60000),
 
   HELIUS_MAINNET_RPC: z.string().url().default(
     "https://mainnet.helius-rpc.com/?api-key=8dce6436-7274-466f-b329-cd436cbbad42",
@@ -48,11 +46,7 @@ export async function loadEnv(): Promise<Env> {
     const env = envSchema.parse({
       NODE_ENV: Deno.env.get("NODE_ENV"),
       RPC_URL: Deno.env.get("RPC_URL"),
-      RPC_URLS: Deno.env.get("RPC_URLS"),
       RPC_TIMEOUT_MS: Deno.env.get("RPC_TIMEOUT_MS"),
-      RPC_HEALTH_CHECK_INTERVAL_MS: Deno.env.get(
-        "RPC_HEALTH_CHECK_INTERVAL_MS",
-      ),
       HELIUS_MAINNET_RPC: Deno.env.get("HELIUS_MAINNET_RPC"),
       HELIUS_DEVNET_RPC: Deno.env.get("HELIUS_DEVNET_RPC"),
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
