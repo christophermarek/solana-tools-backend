@@ -2,7 +2,7 @@ import * as keypairRepo from "../../db/repositories/keypairs.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { TAG } from "./_constants.ts";
-import { ListWalletsParams, ListWalletsResult, Wallet } from "./types.ts";
+import { ListWalletsParams, ListWalletsResult, Wallet } from "./_types.ts";
 import { mapWalletFromDb } from "./_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 

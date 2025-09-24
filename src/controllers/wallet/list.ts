@@ -1,5 +1,5 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import { listWallets as listWalletsService } from "../../services/wallet/_index.ts";
+import walletService from "../../services/wallet/_index.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 
@@ -17,7 +17,7 @@ export const listWallets: RouterMiddleware<string> = async (ctx) => {
   );
 
   try {
-    const [result, error] = await listWalletsService(
+    const [result, error] = await walletService.listWallets(
       { activeOnly, includeBalances: true },
       requestId,
     );

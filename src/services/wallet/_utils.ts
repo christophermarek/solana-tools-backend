@@ -1,4 +1,4 @@
-import { Wallet, WalletWithBalance } from "./types.ts";
+import { Wallet, WalletWithBalance } from "./_types.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 
 export interface BalanceData {

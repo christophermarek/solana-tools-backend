@@ -55,3 +55,16 @@ export const bulkEditWalletsSchema = z.object({
 });
 
 export type BulkEditWalletsPayload = z.infer<typeof bulkEditWalletsSchema>;
+
+/**
+ * Schema for refreshing wallet balances
+ */
+export const refreshWalletBalancesSchema = z.object({
+  walletIds: z.array(z.number().int().positive())
+    .min(1, "At least one wallet ID is required")
+    .max(100, "Maximum of 100 wallet IDs allowed at once"),
+});
+
+export type RefreshWalletBalancesPayload = z.infer<
+  typeof refreshWalletBalancesSchema
+>;

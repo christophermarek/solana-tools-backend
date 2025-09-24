@@ -3,8 +3,8 @@ import { listWallets } from "./list.ts";
 import { bulkEditWallets } from "./edit.ts";
 import { refreshWalletBalances } from "./refresh.ts";
 
-export * from "./types.ts";
-export * from "./utils.ts";
+export * from "./_types.ts";
+export * from "./_utils.ts";
 export * from "./create.ts";
 export * from "./list.ts";
 export * from "./edit.ts";

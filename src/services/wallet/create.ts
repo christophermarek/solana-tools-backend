@@ -1,6 +1,6 @@
 import { Keypair } from "@solana/web3.js";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import { getBalanceByPublicKey } from "../solana/index.ts";
+import solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { MAX_WALLETS_PER_CREATE_REQUEST, TAG } from "./_constants.ts";
@@ -8,7 +8,7 @@ import {
   CreateWalletParams,
   CreateWalletResult,
   WalletWithBalance,
-} from "./types.ts";
+} from "./_types.ts";
 import { type BalanceData, mapWalletWithBalanceFromDb } from "./_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 
@@ -58,10 +58,11 @@ export async function createWallets(
       );
 
       try {
-        const balance: BalanceData | null = await getBalanceByPublicKey(
-          publicKey,
-          requestId ?? TAG,
-        );
+        const balance: BalanceData | null = await solanaService
+          .getBalanceByPublicKey(
+            publicKey,
+            requestId ?? TAG,
+          );
 
         if (balance) {
           wallets.push(mapWalletWithBalanceFromDb(dbKeypair, balance));

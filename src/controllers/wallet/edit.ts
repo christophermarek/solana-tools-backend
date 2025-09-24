@@ -1,5 +1,5 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import { bulkEditWallets as bulkEditWalletsService } from "../../services/wallet/_index.ts";
+import walletService from "../../services/wallet/_index.ts";
 import { BulkEditWalletsPayload } from "../../schemas/wallet.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
@@ -13,7 +13,7 @@ export const bulkEditWallets: RouterMiddleware<string> = async (ctx) => {
       .value as BulkEditWalletsPayload;
     const { walletIds, updates } = body;
 
-    const [result, error] = await bulkEditWalletsService(
+    const [result, error] = await walletService.bulkEditWallets(
       { walletIds, updates },
       requestId,
     );

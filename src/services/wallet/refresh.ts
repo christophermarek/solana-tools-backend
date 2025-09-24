@@ -1,20 +1,23 @@
-import { getWalletBalances } from "../solana/index.ts";
+import solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { TAG } from "./_constants.ts";
-import { RefreshBalancesResult } from "./types.ts";
+import { RefreshBalancesResult } from "./_types.ts";
 
 export async function refreshWalletBalances(
   walletIds: number[],
   requestId?: string | undefined,
 ): Promise<[RefreshBalancesResult, null] | [null, WalletErrors]> {
-  logging.info(
-    requestId ?? TAG,
-    `Refreshing balances for ${walletIds.length} wallets`,
-  );
-
   try {
-    const balances = await getWalletBalances(walletIds, requestId ?? TAG);
+    logging.info(
+      requestId ?? TAG,
+      `Refreshing balances for ${walletIds.length} wallets`,
+    );
+
+    const balances = await solanaService.getWalletBalances(
+      walletIds,
+      requestId ?? TAG,
+    );
 
     logging.info(
       requestId ?? TAG,

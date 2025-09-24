@@ -1,50 +1,60 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import { getBalanceByPublicKey } from "../../services/solana/balance.ts";
-import { WalletParamPayload } from "../../schemas/wallet.ts";
+import walletService from "../../services/wallet/_index.ts";
+import { RefreshWalletBalancesPayload } from "../../schemas/wallet.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 
 export const refreshWalletBalance: RouterMiddleware<string> = async (ctx) => {
   const requestId = getRequestId(ctx);
-  const params = ctx.state.paramsData as WalletParamPayload;
-  const publicKey = params.publicKey;
-
-  logging.info(
-    requestId,
-    `Refreshing balance for wallet with public key: ${publicKey}`,
-  );
 
   try {
-    const balance = await getBalanceByPublicKey(publicKey, requestId);
+    const body = await ctx.request.body({ type: "json" })
+      .value as RefreshWalletBalancesPayload;
+    const { walletIds } = body;
 
-    if (!balance) {
-      logging.info(requestId, `Wallet not found: ${publicKey}`);
-      ResponseUtil.notFound(
+    logging.info(
+      requestId,
+      `Refreshing balances for ${walletIds.length} wallets`,
+    );
+
+    const [result, error] = await walletService.refreshWalletBalances(
+      walletIds,
+      requestId,
+    );
+
+    if (error) {
+      logging.error(
+        requestId,
+        `Failed to refresh wallet balances: ${error}`,
+        error,
+      );
+      ResponseUtil.serverError(
         ctx,
-        `Wallet with public key ${publicKey} not found`,
+        new Error(`Failed to refresh wallet balances: ${error}`),
       );
       return;
     }
 
-    logging.info(requestId, `Refreshed balance for wallet: ${publicKey}`, {
-      solBalance: balance.solBalance,
-      wsolBalance: balance.wsolBalance,
-      totalBalance: balance.totalBalance,
-      balanceStatus: balance.balanceStatus,
-      lastUpdated: balance.lastUpdated,
-    });
+    logging.info(
+      requestId,
+      `Successfully refreshed ${result.successful} wallet balances, ${result.failed} failed`,
+    );
 
-    ResponseUtil.success(ctx, { balance });
+    ResponseUtil.success(ctx, {
+      refreshed: result.successful,
+      failed: result.failed,
+      total: result.successful + result.failed,
+    });
 
     logging.debug(
       requestId,
-      "Response body with refreshed balance",
+      "Response body with refresh results",
       ctx.response.body,
     );
   } catch (error) {
     logging.error(
       requestId,
-      `Error refreshing balance for: ${publicKey}`,
+      "Error refreshing wallet balances",
       error,
     );
     ResponseUtil.serverError(ctx, error);

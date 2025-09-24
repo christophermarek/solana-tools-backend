@@ -4,6 +4,7 @@ import {
   bulkEditWalletsSchema,
   createWalletsSchema,
   importWalletSchema,
+  refreshWalletBalancesSchema,
   walletParamSchema,
 } from "../schemas/wallet.ts";
 
@@ -54,8 +55,8 @@ router.get(
 );
 
 router.post(
-  "/:publicKey/balance/refresh",
-  validateRequest({ paramsSchema: walletParamSchema }),
+  "/balance/refresh",
+  validateRequest({ bodySchema: refreshWalletBalancesSchema }),
   refreshWalletBalance,
 );
 
