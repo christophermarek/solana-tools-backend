@@ -30,9 +30,11 @@ export type ImportWalletPayload = z.infer<typeof importWalletSchema>;
  */
 export const walletParamSchema = z.object({
   publicKey: z.string()
-    .min(32, "Invalid public key format")
-    .max(44, "Invalid public key format")
-    .regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, "Invalid public key format"),
+    .length(44, "Invalid public key format - must be exactly 44 characters")
+    .regex(
+      /^[1-9A-HJ-NP-Za-km-z]{44}$/,
+      "Invalid public key format - must be base58 encoded",
+    ),
 });
 
 export type WalletParamPayload = z.infer<typeof walletParamSchema>;
@@ -53,5 +55,3 @@ export const bulkEditWalletsSchema = z.object({
 });
 
 export type BulkEditWalletsPayload = z.infer<typeof bulkEditWalletsSchema>;
-
-

@@ -1,8 +1,21 @@
 import { PublicKey, TransactionMessage } from "@solana/web3.js";
-import * as solanaService from "../solana/index.ts";
-import * as rateLimiter from "../solana/rate-limiter.ts";
+import * as connectionService from "./connection.ts";
+import * as rateLimiter from "./rate-limiter.ts";
 import * as logging from "../../utils/logging.ts";
-import { FeeEstimate } from "./types.ts";
+import {
+  buildSolTransferIx,
+  buildWsolTransferIxs,
+  getLatestBlockhash,
+} from "./index.ts";
+
+/**
+ * Fee estimate result
+ */
+export interface FeeEstimate {
+  baseFee: number; // In lamports
+  priorityFee: number; // In lamports
+  totalFee: number; // In lamports
+}
 
 /**
  * Estimate transaction fee for a SOL transfer
@@ -18,11 +31,11 @@ export async function estimateSolTransferFee(
     await rateLimiter.waitForRateLimit("estimateFee", requestId);
 
     // Get connection and latest blockhash
-    const connection = await solanaService.getConnection();
-    const blockhash = await solanaService.getLatestBlockhash(requestId);
+    const connection = await connectionService.getConnection();
+    const blockhash = await getLatestBlockhash(requestId);
 
     // Create a SOL transfer instruction
-    const transferInstruction = solanaService.buildSolTransferIx(
+    const transferInstruction = buildSolTransferIx(
       fromPublicKey,
       toPublicKey,
       amountLamports,
@@ -88,11 +101,11 @@ export async function estimateWsolTransferFee(
     await rateLimiter.waitForRateLimit("estimateFee", requestId);
 
     // Get connection and latest blockhash
-    const connection = await solanaService.getConnection();
-    const blockhash = await solanaService.getLatestBlockhash(requestId);
+    const connection = await connectionService.getConnection();
+    const blockhash = await getLatestBlockhash(requestId);
 
     // Get WSOL transfer instructions (this may include ATA creation)
-    const transferInstructions = await solanaService.buildWsolTransferIxs(
+    const transferInstructions = await buildWsolTransferIxs(
       fromPublicKey,
       toPublicKey,
       amountLamports,
@@ -145,3 +158,8 @@ export async function estimateWsolTransferFee(
     };
   }
 }
+
+export default {
+  estimateSolTransferFee,
+  estimateWsolTransferFee,
+};

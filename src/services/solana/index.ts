@@ -3,8 +3,8 @@ import * as rateLimiter from "./rate-limiter.ts";
 import * as balanceService from "./balance.ts";
 import * as transactionService from "./transaction.ts";
 import * as tokenService from "./token.ts";
-import * as utilsService from "./utils.ts";
 import * as swapService from "./swap.ts";
+import * as feeService from "./fee.ts";
 import * as logging from "../../utils/logging.ts";
 
 /**
@@ -54,9 +54,11 @@ export {
 } from "./connection.ts";
 
 export {
+  getBalanceByPublicKey,
   // Balance service
   getSolBalance,
   getTotalSolBalance,
+  getWalletBalances,
   getWsolBalance,
   lamportsToSol,
   solToLamports,
@@ -89,6 +91,12 @@ export {
   getTokenSwapQuote,
 } from "./swap.ts";
 
+export {
+  // Fee service
+  estimateSolTransferFee,
+  estimateWsolTransferFee,
+} from "./fee.ts";
+
 // Rate limiter
 export { waitForRateLimit } from "./rate-limiter.ts";
 
@@ -109,6 +117,8 @@ export default {
   getTotalSolBalance: balanceService.getTotalSolBalance,
   lamportsToSol: balanceService.lamportsToSol,
   solToLamports: balanceService.solToLamports,
+  getWalletBalances: balanceService.getWalletBalances,
+  getBalanceByPublicKey: balanceService.getBalanceByPublicKey,
 
   // Transactions
   getLatestBlockhash: transactionService.getLatestBlockhash,
@@ -130,6 +140,10 @@ export default {
   getTokenSwapQuote: swapService.getTokenSwapQuote,
   buildTokenSwapIx: swapService.buildTokenSwapIx,
   executeTokenSwap: swapService.executeTokenSwap,
+
+  // Fee operations
+  estimateSolTransferFee: feeService.estimateSolTransferFee,
+  estimateWsolTransferFee: feeService.estimateWsolTransferFee,
 
   // Rate limiter
   waitForRateLimit: rateLimiter.waitForRateLimit,

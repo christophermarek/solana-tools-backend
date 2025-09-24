@@ -1,7 +1,8 @@
 import { createWallets } from "./create.ts";
 import { listWallets } from "./list.ts";
 import { getWallet } from "./get.ts";
-import { getBalance, refreshWalletBalance } from "./balance.ts";
+import { getBalance } from "./balance.ts";
+import { refreshWalletBalance } from "./refresh.ts";
 import { bulkEditWallets } from "./edit.ts";
 import { importWallet } from "./import.ts";
 

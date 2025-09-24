@@ -1,14 +1,15 @@
 import * as connectionService from "../solana/connection.ts";
 import * as logging from "../../utils/logging.ts";
 import { PublicKey } from "@solana/web3.js";
-import { PumpFunErrors } from "./errors.ts";
+import { PumpFunErrors } from "./_errors.ts";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TAG,
   TOKEN_PROGRAM_ID,
-} from "./constants.ts";
-import { PUMP_FUN_ERRORS } from "./errors.ts";
+} from "./_constants.ts";
+import { PUMP_FUN_ERRORS } from "./_errors.ts";
 
+// SPL is short for Solana Program Library
 export async function getSPLBalance(
   wallet: PublicKey,
   mint: PublicKey,

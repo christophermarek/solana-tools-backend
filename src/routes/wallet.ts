@@ -5,7 +5,7 @@ import {
   createWalletsSchema,
   importWalletSchema,
   walletParamSchema,
-} from "../schemas/wallet.schema.ts";
+} from "../schemas/wallet.ts";
 
 import {
   bulkEditWallets,
@@ -21,6 +21,8 @@ const router = new Router({
   prefix: "/api/v1/wallets",
 });
 
+router.get("/", listWallets);
+
 router.post(
   "/",
   validateRequest({ bodySchema: createWalletsSchema }),
@@ -33,13 +35,8 @@ router.post(
   importWallet,
 );
 
-router.get(
+router.patch(
   "/",
-  listWallets,
-);
-
-router.post(
-  "/bulk-edit",
   validateRequest({ bodySchema: bulkEditWalletsSchema }),
   bulkEditWallets,
 );

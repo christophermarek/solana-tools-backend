@@ -3,9 +3,9 @@ import { Connection } from "@solana/web3.js";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { getConfig } from "../../utils/env.ts";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import { PUMP_FUN_ERRORS, PumpFunErrors } from "./errors.ts";
+import { PUMP_FUN_ERRORS, PumpFunErrors } from "./_errors.ts";
 import * as logging from "../../utils/logging.ts";
-import { TAG } from "./constants.ts";
+import { TAG } from "./_constants.ts";
 
 let sdk: PumpFunSDK | null = null;
 

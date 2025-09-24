@@ -418,50 +418,62 @@ export async function getWalletStats(): Promise<WalletStats> {
 export async function importWallet(
   secretKey: string,
   label?: string,
-): Promise<DbKeypair> {
-  const client = getClient();
+): Promise<[DbKeypair, null] | [null, string]> {
+  try {
+    const client = getClient();
 
-  const keyArray = bs58.decode(secretKey);
-  const keypair = Keypair.fromSecretKey(keyArray);
-  const publicKey = keypair.publicKey.toString();
+    const keyArray = bs58.decode(secretKey);
+    const keypair = Keypair.fromSecretKey(keyArray);
+    const publicKey = keypair.publicKey.toString();
 
-  const existingWallet = await client.prepare(`
+    const existingWallet = await client.prepare(`
     SELECT * FROM keypairs WHERE public_key = ?
   `).get(publicKey) as DbKeypair | undefined;
 
-  if (existingWallet) {
-    if (!existingWallet.is_active) {
-      await client.prepare(`
+    if (existingWallet) {
+      if (!existingWallet.is_active) {
+        await client.prepare(`
         UPDATE keypairs 
         SET 
           is_active = 1, 
           label = COALESCE(?, label),
           updated_at = CURRENT_TIMESTAMP
+          balance_status = 'UNKNOWN'
         WHERE public_key = ?
-      `).run(label, publicKey);
+      `).run(label, publicKey, BalanceStatus.UNKNOWN);
 
-      const result = await client.prepare(`
+        const result = await client.prepare(`
         SELECT * FROM keypairs WHERE public_key = ?
       `).get(publicKey) as DbKeypair;
-      return result;
+        return [result, null];
+      }
+      return [existingWallet, null];
     }
-    return existingWallet;
-  }
 
-  const stmt = client.prepare(`
+    const stmt = client.prepare(`
     INSERT INTO keypairs (
       public_key,
       secret_key,
-      label
+      label,
+      balance_status
     ) VALUES (?, ?, ?)
   `);
 
-  const result = await stmt.run(publicKey, secretKey, label);
-  const insertedId = result as number;
-  const newWallet = await client.prepare(`
+    const result = await stmt.run(
+      publicKey,
+      secretKey,
+      label,
+      BalanceStatus.UNKNOWN,
+    );
+    const insertedId = result as number;
+    const newWallet = await client.prepare(`
     SELECT * FROM keypairs WHERE id = ?
-  `).get(insertedId) as DbKeypair;
-  return newWallet;
+    `).get(insertedId) as DbKeypair;
+    return [newWallet, null];
+  } catch (error) {
+    logging.error("keypair", `Failed to import wallet`, error);
+    return [null, "Failed to import wallet"];
+  }
 }
 
 export async function markWalletAsStale(

@@ -1,11 +1,11 @@
-import { getSDK } from "./index.ts";
+import { getSDK } from "./_index.ts";
 import * as solanaService from "../solana/index.ts";
 import * as logging from "../../utils/logging.ts";
 import { Keypair, type VersionedTransactionResponse } from "@solana/web3.js";
-import { PumpFunErrors } from "./errors.ts";
+import { PumpFunErrors } from "./_errors.ts";
 import { BondingCurveAccount } from "pumpdotfun-repumped-sdk";
-import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./constants.ts";
-import { PUMP_FUN_ERRORS } from "./errors.ts";
+import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
+import { PUMP_FUN_ERRORS } from "./_errors.ts";
 
 export async function buy(
   buyer: Keypair,

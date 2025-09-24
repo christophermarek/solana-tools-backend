@@ -3,7 +3,7 @@ import {
   assertExists,
 } from "https://deno.land/std@0.220.1/assert/mod.ts";
 import { clearConfig, loadEnv } from "../../../utils/env.ts";
-import { PUMP_FUN_ERRORS } from "../errors.ts";
+import { PUMP_FUN_ERRORS } from "../_errors.ts";
 
 Deno.test({
   name: "Test 1: Call getSDK once, init SDK success",
@@ -15,7 +15,7 @@ Deno.test({
       "PUMP_FUN_WALLET_PRIVATE_KEY should be configured",
     );
 
-    const pumpFunModule = await import("../index.ts");
+    const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
     const [sdk, error] = pumpFunModule.getSDK();
@@ -38,7 +38,7 @@ Deno.test({
 Deno.test({
   name: "Test 2: Call getSDK again, returns existing instance",
   async fn() {
-    const pumpFunModule = await import("../index.ts");
+    const pumpFunModule = await import("../_index.ts");
 
     const [sdk1, error1] = pumpFunModule.getSDK();
     const [sdk2, error2] = pumpFunModule.getSDK();
@@ -62,7 +62,7 @@ Deno.test({
 Deno.test({
   name: "Test 3: Clear SDK, set invalid PK, call getSDK should error",
   async fn() {
-    const pumpFunModule = await import("../index.ts");
+    const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
     const originalEnvGet = Deno.env.get;

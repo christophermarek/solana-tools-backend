@@ -1,0 +1,72 @@
+import { Wallet, WalletWithBalance } from "./types.ts";
+import type { DbKeypair } from "../../db/repositories/keypairs.ts";
+
+export interface BalanceData {
+  id: number;
+  publicKey: string;
+  label?: string;
+  solBalance: number;
+  wsolBalance: number;
+  totalBalance: number;
+  lastUpdated: Date;
+  balanceStatus: string;
+}
+
+export function calculateTotalBalance(
+  solBalance: bigint | number | null | undefined,
+  wsolBalance: bigint | number | null | undefined,
+): number | undefined {
+  if (solBalance === null && wsolBalance === null) return undefined;
+  if (solBalance === undefined && wsolBalance === undefined) return undefined;
+
+  const solValue = solBalance !== null && solBalance !== undefined
+    ? Number(solBalance) / 1e9
+    : 0;
+  const wsolValue = wsolBalance !== null && wsolBalance !== undefined
+    ? Number(wsolBalance) / 1e9
+    : 0;
+
+  return solValue + wsolValue;
+}
+
+export function mapWalletFromDb(dbKeypair: DbKeypair): Wallet {
+  return {
+    id: dbKeypair.id,
+    publicKey: dbKeypair.public_key,
+    label: dbKeypair.label,
+    isActive: Boolean(dbKeypair.is_active),
+    createdAt: new Date(dbKeypair.created_at),
+    solBalance: dbKeypair.sol_balance
+      ? Number(dbKeypair.sol_balance) / 1e9
+      : undefined,
+    wsolBalance: dbKeypair.wsol_balance
+      ? Number(dbKeypair.wsol_balance) / 1e9
+      : undefined,
+    totalBalance: calculateTotalBalance(
+      dbKeypair.sol_balance,
+      dbKeypair.wsol_balance,
+    ),
+    lastBalanceUpdate: dbKeypair.last_balance_update
+      ? new Date(dbKeypair.last_balance_update)
+      : undefined,
+    balanceStatus: dbKeypair.balance_status,
+  };
+}
+
+export function mapWalletWithBalanceFromDb(
+  dbKeypair: DbKeypair,
+  balance: BalanceData,
+): WalletWithBalance {
+  return {
+    id: dbKeypair.id,
+    publicKey: dbKeypair.public_key,
+    label: dbKeypair.label,
+    isActive: Boolean(dbKeypair.is_active),
+    createdAt: new Date(dbKeypair.created_at),
+    solBalance: balance.solBalance,
+    wsolBalance: balance.wsolBalance,
+    totalBalance: balance.totalBalance,
+    lastBalanceUpdate: balance.lastUpdated,
+    balanceStatus: balance.balanceStatus,
+  };
+}
