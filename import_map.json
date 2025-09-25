@@ -25,6 +25,7 @@
     "dotenv": "https://deno.land/std@0.220.1/dotenv/mod.ts",
     "sqlite": "npm:sqlite@^5.0.0",
     "@db/sqlite": "jsr:@db/sqlite@0.12.0",
-    "pumpdotfun-repumped-sdk": "npm:pumpdotfun-repumped-sdk"
+    "pumpdotfun-repumped-sdk": "npm:pumpdotfun-repumped-sdk",
+    "@solana-developers/helpers": "npm:@solana-developers/helpers"
   }
 }

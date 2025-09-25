@@ -8,6 +8,8 @@ export * from "./_constants.ts";
 export * from "./_errors.ts";
 export * from "./_types.ts";
 export * from "./send-bundle.ts";
+export * from "./tip-accounts.ts";
+export * from "./tip-transaction.ts";
 
 let globalJitoService: JitoService | null = null;
 

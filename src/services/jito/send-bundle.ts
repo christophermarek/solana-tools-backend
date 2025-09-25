@@ -7,9 +7,11 @@ import { Bundle } from "jito-ts/dist/sdk/block-engine/types";
 
 export async function sendBundle(
   txBundle: Bundle,
+  timeoutMs: number = 30000,
 ): Promise<[BundleResult, null] | [null, JitoErrors]> {
   logging.info(TAG, "Sending bundle", {
     transactionCount: txBundle.packets.length,
+    timeoutMs,
   });
 
   try {
@@ -18,13 +20,28 @@ export async function sendBundle(
       return [null, error];
     }
 
-    const result = await service.client.sendBundle(txBundle);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Bundle send timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    const bundlePromise = service.client.sendBundle(txBundle);
+    const result = await Promise.race([bundlePromise, timeoutPromise]);
 
     if (!result.ok) {
-      logging.error(TAG, "Failed to send bundle", result.error);
+      logging.error(TAG, "Failed to send bundle", {
+        error: result.error,
+        errorCode: result.error.code,
+        errorDetails: result.error.details,
+      });
       return [
         null,
-        { type: "JITO_ERROR", message: result.error.message } as JitoError,
+        {
+          type: "JITO_ERROR",
+          message:
+            `Jito sendBundle failed: ${result.error.details} (code: ${result.error.code})`,
+        } as JitoError,
       ];
     }
 

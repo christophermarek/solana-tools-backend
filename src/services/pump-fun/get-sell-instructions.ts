@@ -4,6 +4,7 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { PumpFunErrors } from "./_errors.ts";
 import { SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
+import { getConnection } from "../solana/connection.ts";
 
 export interface SellInstructionsParams {
   sellAmountSol?: number;
@@ -40,7 +41,25 @@ export async function getSellInstructionsByTokenAmount(
       slippageBasisPoints,
     );
 
-    logging.info(TAG, "Sell instructions created successfully");
+    const [connection, connectionError] = await getConnection();
+    if (connectionError) {
+      logging.error(
+        TAG,
+        "Failed to get connection for transaction preparation",
+        connectionError,
+      );
+      return [null, {
+        type: "SDK_ERROR",
+        message: `Failed to get connection: ${connectionError}`,
+      }];
+    }
+
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = seller.publicKey;
+    transaction.sign(seller);
+
+    logging.info(TAG, "Sell instructions created and prepared successfully");
 
     return [transaction, null];
   } catch (error) {

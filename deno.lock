@@ -14,6 +14,7 @@
     "jsr:@std/path@^1.1.1": "1.1.2",
     "npm:@coral-xyz/anchor@*": "0.31.1_@solana+web3.js@1.98.4",
     "npm:@project-serum/anchor@*": "0.26.0_@solana+web3.js@1.98.4",
+    "npm:@solana-developers/helpers@*": "2.8.1_@solana+web3.js@1.98.4",
     "npm:@solana/spl-token@*": "0.4.14_@solana+web3.js@1.98.4",
     "npm:@solana/web3.js@*": "1.98.4",
     "npm:@types/node@*": "24.2.0",
@@ -76,13 +77,36 @@
     "@babel/runtime@7.28.4": {
       "integrity": "sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ=="
     },
+    "@coral-xyz/anchor-errors@0.30.1": {
+      "integrity": "sha512-9Mkradf5yS5xiLWrl9WrpjqOrAV+/W2RQHDlbnAZBivoGpOs1ECjoDCkVk4aRG8ZdiFiB8zQEVlxf+8fKkmSfQ=="
+    },
     "@coral-xyz/anchor-errors@0.31.1": {
       "integrity": "sha512-NhNEku4F3zzUSBtrYz84FzYWm48+9OvmT1Hhnwr6GnPQry2dsEqH/ti/7ASjjpoFTWRnPXrjAIT1qM6Isop+LQ=="
+    },
+    "@coral-xyz/anchor@0.30.1_@solana+web3.js@1.98.4": {
+      "integrity": "sha512-gDXFoF5oHgpriXAaLpxyWBHdCs8Awgf/gLHIo6crv7Aqm937CNdY+x+6hoj7QR5vaJV7MxWSQ0NGFzL3kPbWEQ==",
+      "dependencies": [
+        "@coral-xyz/anchor-errors@0.30.1",
+        "@coral-xyz/borsh@0.30.1_@solana+web3.js@1.98.4",
+        "@noble/hashes",
+        "@solana/web3.js@1.98.4",
+        "bn.js",
+        "bs58@4.0.1",
+        "buffer-layout",
+        "camelcase",
+        "cross-fetch",
+        "crypto-hash",
+        "eventemitter3@4.0.7",
+        "pako",
+        "snake-case",
+        "superstruct@0.15.5",
+        "toml"
+      ]
     },
     "@coral-xyz/anchor@0.31.1_@solana+web3.js@1.98.4": {
       "integrity": "sha512-QUqpoEK+gi2S6nlYc2atgT2r41TT3caWr/cPUEL8n8Md9437trZ68STknq897b82p5mW0XrTBNOzRbmIRJtfsA==",
       "dependencies": [
-        "@coral-xyz/anchor-errors",
+        "@coral-xyz/anchor-errors@0.31.1",
         "@coral-xyz/borsh@0.31.1_@solana+web3.js@1.98.4",
         "@noble/hashes",
         "@solana/web3.js@1.98.4",
@@ -99,6 +123,14 @@
     },
     "@coral-xyz/borsh@0.26.0_@solana+web3.js@1.98.4": {
       "integrity": "sha512-uCZ0xus0CszQPHYfWAqKS5swS1UxvePu83oOF+TWpUkedsNlg6p2p4azxZNSSqwXb9uXMFgxhuMBX9r3Xoi0vQ==",
+      "dependencies": [
+        "@solana/web3.js@1.98.4",
+        "bn.js",
+        "buffer-layout"
+      ]
+    },
+    "@coral-xyz/borsh@0.30.1_@solana+web3.js@1.98.4": {
+      "integrity": "sha512-aaxswpPrCFKl8vZTbxLssA2RvwX2zmKLlRCIktJOwW+VpVwYtXRtlWiIP+c2pPRKneiTiWCN2GEMSH9j1zTlWQ==",
       "dependencies": [
         "@solana/web3.js@1.98.4",
         "bn.js",
@@ -198,6 +230,18 @@
     },
     "@protobufjs/utf8@1.1.0": {
       "integrity": "sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw=="
+    },
+    "@solana-developers/helpers@2.8.1_@solana+web3.js@1.98.4": {
+      "integrity": "sha512-xvoOj+ewL18+h6fMrXp1vTss0WBLnhQHnBb6mMPfEQE32w0THlxm8OPXNUY8g4tREX7ugU5cDEP7c2teye1Z7A==",
+      "dependencies": [
+        "@coral-xyz/anchor@0.30.1_@solana+web3.js@1.98.4",
+        "@solana/spl-token",
+        "@solana/spl-token-metadata",
+        "@solana/web3.js@1.98.4",
+        "bn.js",
+        "bs58@6.0.0",
+        "dotenv"
+      ]
     },
     "@solana/buffer-layout-utils@0.2.0": {
       "integrity": "sha512-szG4sxgJGktbuZYDg2FfNmkMi0DYQoVjN2h7ta1W1hPrwzarcFLBq9UpX1UjNXsNpT9dn+chgprtWGioUAr4/g==",
@@ -698,7 +742,7 @@
     "pumpdotfun-repumped-sdk@1.4.1_@solana+web3.js@1.98.4": {
       "integrity": "sha512-UcFN7V8kMSv4XKjC5j7sGirhEwmmcALiPdZgUTNNgcfqlY4zUcin4/i76UoMIaEBoFeY0PvLxiOk3l+RY9vbUA==",
       "dependencies": [
-        "@coral-xyz/anchor",
+        "@coral-xyz/anchor@0.31.1_@solana+web3.js@1.98.4",
         "@solana/spl-token",
         "@solana/web3.js@1.98.4",
         "bn.js",
@@ -1216,6 +1260,7 @@
       "npm:@openbook-dex/openbook@*",
       "npm:@project-serum/anchor@*",
       "npm:@raydium-io/raydium-sdk@*",
+      "npm:@solana-developers/helpers@*",
       "npm:@solana/buffer-layout@*",
       "npm:@solana/spl-token@*",
       "npm:@solana/web3.js@*",

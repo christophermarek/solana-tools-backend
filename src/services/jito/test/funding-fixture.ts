@@ -4,7 +4,10 @@ import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import * as solanaService from "../../solana/_index.ts";
 import * as logging from "../../../utils/logging.ts";
 import {
+  Connection,
   Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
   sendAndConfirmTransaction,
   SystemProgram,
   Transaction,
@@ -277,6 +280,259 @@ export async function fundExistingWallets(
   return await fundWalletsWithRetry(wallets, amountPerWalletSol);
 }
 
+async function heliusAirdrop(
+  connection: Connection,
+  publicKey: PublicKey,
+  lamports: number,
+): Promise<number> {
+  try {
+    const signature = await connection.requestAirdrop(publicKey, lamports);
+    await connection.confirmTransaction(signature);
+    return lamports;
+  } catch (error) {
+    throw new Error(
+      `Helius airdrop failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
+export async function fundWalletsWithTestnetAirdrop(
+  wallets: Keypair[],
+  targetAmountSol: number = DEFAULT_FUNDING_AMOUNT_SOL,
+): Promise<FundingResult> {
+  logging.info(TAG, "Funding wallets with testnet airdrop", {
+    walletCount: wallets.length,
+    targetAmount: targetAmountSol,
+  });
+
+  const [connection, connectionError] = await getConnection();
+  if (connectionError) {
+    return {
+      success: false,
+      fundedWallets: [],
+      totalFunded: 0,
+      error: `Failed to get connection: ${connectionError}`,
+    };
+  }
+
+  const fundedWallets: Keypair[] = [];
+  const fundingResults: WalletFundingInfo[] = [];
+  let totalFunded = 0;
+
+  for (const wallet of wallets) {
+    try {
+      logging.info(TAG, "Testnet airdropping to wallet", {
+        wallet: wallet.publicKey.toString(),
+        targetAmount: targetAmountSol,
+      });
+
+      const airdropAmount = targetAmountSol * LAMPORTS_PER_SOL;
+      const signature = await connection.requestAirdrop(
+        wallet.publicKey,
+        airdropAmount,
+      );
+      await connection.confirmTransaction(signature);
+
+      const [balanceResult, balanceError] = await solanaService.getSolBalance({
+        publicKey: wallet.publicKey,
+      });
+
+      if (balanceError) {
+        throw new Error(`Failed to get balance after airdrop: ${balanceError}`);
+      }
+
+      const newBalance = balanceResult.balance;
+      const actualBalance = solanaService.lamportsToSol(newBalance);
+
+      logging.info(TAG, "Testnet wallet airdrop successful", {
+        wallet: wallet.publicKey.toString(),
+        newBalance: actualBalance,
+        targetAmount: targetAmountSol,
+        signature,
+      });
+
+      fundedWallets.push(wallet);
+      fundingResults.push({
+        keypair: wallet,
+        amountSol: actualBalance,
+        success: true,
+      });
+      totalFunded += actualBalance;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      logging.error(TAG, "Failed to testnet airdrop to wallet", {
+        wallet: wallet.publicKey.toString(),
+        error: errorMessage,
+        errorDetails: JSON.stringify(error, null, 2),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
+
+      fundingResults.push({
+        keypair: wallet,
+        amountSol: 0,
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+
+  const successfulFunds = fundingResults.filter((r) => r.success);
+
+  logging.info(TAG, "Testnet airdrop funding process completed", {
+    totalWallets: wallets.length,
+    successfulFunds: successfulFunds.length,
+    failedFunds: fundingResults.length - successfulFunds.length,
+    totalFunded,
+  });
+
+  return {
+    success: successfulFunds.length > 0,
+    fundedWallets,
+    totalFunded,
+    error: successfulFunds.length < wallets.length
+      ? `Only ${successfulFunds.length}/${wallets.length} wallets were funded successfully`
+      : undefined,
+  };
+}
+
+export async function fundWalletsWithAirdrop(
+  wallets: Keypair[],
+  targetAmountSol: number = DEFAULT_FUNDING_AMOUNT_SOL,
+): Promise<FundingResult> {
+  logging.info(TAG, "Funding wallets with airdrop", {
+    walletCount: wallets.length,
+    targetAmount: targetAmountSol,
+  });
+
+  const [connection, connectionError] = await getConnection();
+  if (connectionError) {
+    return {
+      success: false,
+      fundedWallets: [],
+      totalFunded: 0,
+      error: `Failed to get connection: ${connectionError}`,
+    };
+  }
+
+  const fundedWallets: Keypair[] = [];
+  const fundingResults: WalletFundingInfo[] = [];
+  let totalFunded = 0;
+  let airdropFailed = false;
+
+  for (const wallet of wallets) {
+    try {
+      logging.info(TAG, "Airdropping to wallet", {
+        wallet: wallet.publicKey.toString(),
+        targetAmount: targetAmountSol,
+      });
+
+      const airdropAmount = targetAmountSol * LAMPORTS_PER_SOL;
+      await heliusAirdrop(connection, wallet.publicKey, airdropAmount);
+
+      const [balanceResult, balanceError] = await solanaService.getSolBalance({
+        publicKey: wallet.publicKey,
+      });
+
+      if (balanceError) {
+        throw new Error(`Failed to get balance after airdrop: ${balanceError}`);
+      }
+
+      const newBalance = balanceResult.balance;
+
+      const actualBalance = solanaService.lamportsToSol(newBalance);
+      logging.info(TAG, "Wallet airdrop successful", {
+        wallet: wallet.publicKey.toString(),
+        newBalance: actualBalance,
+        targetAmount: targetAmountSol,
+      });
+
+      fundedWallets.push(wallet);
+      fundingResults.push({
+        keypair: wallet,
+        amountSol: actualBalance,
+        success: true,
+      });
+      totalFunded += actualBalance;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      logging.error(TAG, "Failed to airdrop to wallet", {
+        wallet: wallet.publicKey.toString(),
+        error: errorMessage,
+        errorDetails: JSON.stringify(error, null, 2),
+      });
+
+      airdropFailed = true;
+      fundingResults.push({
+        keypair: wallet,
+        amountSol: 0,
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+
+  if (airdropFailed) {
+    logging.warn(TAG, "Airdrop failed, falling back to manual funding", {
+      failedCount: fundingResults.filter((r) => !r.success).length,
+    });
+
+    const balanceCheck = await checkFundingWalletBalance();
+    if (!balanceCheck.hasEnoughBalance) {
+      return {
+        success: false,
+        fundedWallets: [],
+        totalFunded: 0,
+        error:
+          `Airdrop failed and insufficient balance in main wallet. Current: ${balanceCheck.currentBalance} SOL, Required: ${balanceCheck.requiredBalance} SOL`,
+      };
+    }
+
+    const manualFundingResult = await fundWalletsWithRetry(
+      wallets,
+      targetAmountSol,
+    );
+    if (manualFundingResult.success) {
+      return manualFundingResult;
+    } else {
+      return {
+        success: false,
+        fundedWallets: [],
+        totalFunded: 0,
+        error:
+          `Both airdrop and manual funding failed. Airdrop error: Rate limit exceeded. Manual funding error: ${manualFundingResult.error}`,
+      };
+    }
+  }
+
+  const successfulFunds = fundingResults.filter((r) => r.success);
+
+  logging.info(TAG, "Airdrop funding process completed", {
+    totalWallets: wallets.length,
+    successfulFunds: successfulFunds.length,
+    failedFunds: fundingResults.length - successfulFunds.length,
+    totalFunded,
+  });
+
+  return {
+    success: successfulFunds.length > 0,
+    fundedWallets,
+    totalFunded,
+    error: successfulFunds.length < wallets.length
+      ? `Only ${successfulFunds.length}/${wallets.length} wallets were funded successfully`
+      : undefined,
+  };
+}
+
 export async function getWalletBalances(wallets: Keypair[]): Promise<{
   wallet: string;
   balance: number;
@@ -317,4 +573,122 @@ export async function getWalletBalances(wallets: Keypair[]): Promise<{
   }
 
   return results;
+}
+
+export interface CleanupResult {
+  success: boolean;
+  totalReturned: number;
+  returnedWallets: string[];
+  error?: string;
+}
+
+export async function cleanupTestWallets(
+  testWallets: Keypair[],
+  mainWallet: Keypair,
+  reserveAmountSol: number = 0.001,
+): Promise<CleanupResult> {
+  logging.info(TAG, "Starting wallet cleanup process", {
+    testWalletCount: testWallets.length,
+    mainWallet: mainWallet.publicKey.toString(),
+    reserveAmount: reserveAmountSol,
+  });
+
+  const [connection, connectionError] = await getConnection();
+  if (connectionError) {
+    return {
+      success: false,
+      totalReturned: 0,
+      returnedWallets: [],
+      error: `Failed to get connection: ${connectionError}`,
+    };
+  }
+
+  const returnedWallets: string[] = [];
+  let totalReturned = 0;
+
+  for (const wallet of testWallets) {
+    try {
+      const [balanceResult, balanceError] = await solanaService.getSolBalance({
+        publicKey: wallet.publicKey,
+      });
+
+      if (balanceError) {
+        logging.warn(TAG, "Failed to get wallet balance for cleanup", {
+          wallet: wallet.publicKey.toString(),
+          error: balanceError,
+        });
+        continue;
+      }
+
+      const currentBalance = solanaService.lamportsToSol(balanceResult.balance);
+      const amountToReturn = Math.max(0, currentBalance - reserveAmountSol);
+
+      if (amountToReturn <= 0) {
+        logging.info(TAG, "Wallet has insufficient balance for cleanup", {
+          wallet: wallet.publicKey.toString(),
+          currentBalance,
+          reserveAmount: reserveAmountSol,
+        });
+        continue;
+      }
+
+      const amountLamports = solanaService.solToLamports(amountToReturn);
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: mainWallet.publicKey,
+          lamports: amountLamports,
+        }),
+      );
+
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = wallet.publicKey;
+
+      const signature = await sendAndConfirmTransaction(
+        connection,
+        transaction,
+        [wallet],
+        {
+          commitment: "confirmed",
+          maxRetries: 3,
+        },
+      );
+
+      logging.info(TAG, "Wallet cleanup successful", {
+        wallet: wallet.publicKey.toString(),
+        amountReturned: amountToReturn,
+        signature,
+      });
+
+      returnedWallets.push(wallet.publicKey.toString());
+      totalReturned += amountToReturn;
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    } catch (error) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+      logging.error(TAG, "Failed to cleanup wallet", {
+        wallet: wallet.publicKey.toString(),
+        error: errorMessage,
+      });
+    }
+  }
+
+  logging.info(TAG, "Wallet cleanup process completed", {
+    totalWallets: testWallets.length,
+    returnedWallets: returnedWallets.length,
+    totalReturned,
+  });
+
+  return {
+    success: returnedWallets.length > 0,
+    totalReturned,
+    returnedWallets,
+    error: returnedWallets.length < testWallets.length
+      ? `Only ${returnedWallets.length}/${testWallets.length} wallets were cleaned up successfully`
+      : undefined,
+  };
 }

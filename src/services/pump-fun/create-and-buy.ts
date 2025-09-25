@@ -63,6 +63,26 @@ export async function createAndBuy(
         "Failed to create and buy",
         new Error(errorMessage),
       );
+
+      if (errorMessage.includes("insufficient lamports")) {
+        const [balanceResult, balanceError] = await solanaService.getSolBalance(
+          {
+            publicKey: creator.publicKey,
+          },
+        );
+        if (!balanceError) {
+          const currentBalance = solanaService.lamportsToSol(
+            balanceResult.balance,
+          );
+          const enhancedError =
+            `${errorMessage}. Current wallet balance: ${currentBalance} SOL. Please fund the wallet with more SOL.`;
+          return [
+            null,
+            { type: "SDK_ERROR", message: enhancedError } as SDKError,
+          ];
+        }
+      }
+
       return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
     }
 
