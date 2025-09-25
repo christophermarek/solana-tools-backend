@@ -17,7 +17,7 @@ Deno.test({
     await logWalletInfo();
 
     const env = await loadEnv();
-    const buyer = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const buyer = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(buyer, "Buyer keypair should be created from private key");
 
     const testToken = await createTestToken();
@@ -84,7 +84,7 @@ Deno.test({
     await logWalletInfo();
 
     const env = await loadEnv();
-    const buyer = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const buyer = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(buyer, "Buyer keypair should be created from private key");
 
     const fakeMint = {
@@ -112,7 +112,7 @@ Deno.test({
     await logWalletInfo();
 
     const env = await loadEnv();
-    const buyer = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const buyer = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(buyer, "Buyer keypair should be created from private key");
 
     const testToken = await createTestToken();

@@ -13,7 +13,7 @@ Deno.test({
   name: "Test getSellInstructionsByTokenAmount success",
   async fn() {
     const env = await loadEnv();
-    const seller = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const seller = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(seller, "Seller keypair should be created from private key");
 
     const testToken = await createTestToken();
@@ -60,7 +60,7 @@ Deno.test({
   name: "Test getSellInstructionsByTokenAmount failure - non-existent token",
   async fn() {
     const env = await loadEnv();
-    const seller = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const seller = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(seller, "Seller keypair should be created from private key");
 
     const fakeMint = new PublicKey("11111111111111111111111111111111");

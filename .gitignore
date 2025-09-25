@@ -4,7 +4,10 @@
 # node
 node_modules
 
-.env
+.env.*
+.env.mainnet
+.env.devnet
+.env.testnet
 
 tmp
 DS_Store

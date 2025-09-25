@@ -6,16 +6,16 @@ import { type CreateTokenMetadata } from "pumpdotfun-repumped-sdk";
 import logging from "../../../utils/logging.ts";
 
 Deno.test({
-  name: "Test createAndBuy with PUMP_FUN_WALLET_PRIVATE_KEY as creator",
+  name: "Test createAndBuy with TEST_WALLET_PRIVATE_KEY as creator",
   async fn() {
     const env = await loadEnv();
     assertExists(
-      env.PUMP_FUN_WALLET_PRIVATE_KEY,
-      "PUMP_FUN_WALLET_PRIVATE_KEY should be configured",
+      env.TEST_WALLET_PRIVATE_KEY,
+      "TEST_WALLET_PRIVATE_KEY should be configured",
     );
     assertExists(env.RPC_URL, "RPC_URL should be configured");
 
-    const creator = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const creator = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(creator, "Creator keypair should be created from private key");
 
     const meta = {

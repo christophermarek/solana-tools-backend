@@ -39,12 +39,12 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
   logging.info("test-fixtures", "Creating new test token");
   const env = await loadEnv();
   assertExists(
-    env.PUMP_FUN_WALLET_PRIVATE_KEY,
-    "PUMP_FUN_WALLET_PRIVATE_KEY should be configured",
+    env.TEST_WALLET_PRIVATE_KEY,
+    "TEST_WALLET_PRIVATE_KEY should be configured",
   );
   assertExists(env.RPC_URL, "RPC_URL should be configured");
 
-  const creator = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+  const creator = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(creator, "Creator keypair should be created from private key");
 
   const meta = {
@@ -85,7 +85,7 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
 
 export async function getWalletInfo(): Promise<WalletInfo> {
   const env = await loadEnv();
-  const keypair = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+  const keypair = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(keypair, "Keypair should be created from private key");
 
   const [balance, balanceError] = await solanaService.getSolBalance({

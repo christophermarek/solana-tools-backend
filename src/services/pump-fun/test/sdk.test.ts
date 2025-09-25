@@ -12,14 +12,14 @@ Deno.test({
     const env = await loadEnv();
     assertExists(env.RPC_URL, "RPC_URL should be configured");
     assertExists(
-      env.PUMP_FUN_WALLET_PRIVATE_KEY,
-      "PUMP_FUN_WALLET_PRIVATE_KEY should be configured",
+      env.TEST_WALLET_PRIVATE_KEY,
+      "TEST_WALLET_PRIVATE_KEY should be configured",
     );
 
     const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
-    const wallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const wallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(wallet, "Wallet keypair should be created from private key");
 
     const [sdk, error] = pumpFunModule.getSDK(wallet);
@@ -43,7 +43,7 @@ Deno.test({
   name: "Test 2: Call getSDK again, returns existing instance",
   async fn() {
     const env = await loadEnv();
-    const wallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const wallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(wallet, "Wallet keypair should be created from private key");
 
     const pumpFunModule = await import("../_index.ts");
@@ -74,10 +74,10 @@ Deno.test({
     const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 
-    const wallet1 = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const wallet1 = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(wallet1, "Wallet 1 should be created from private key");
 
-    const wallet2 = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const wallet2 = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(wallet2, "Wallet 2 should be created from private key");
 
     const [sdk1, error1] = pumpFunModule.getSDK(wallet1);

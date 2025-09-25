@@ -40,7 +40,7 @@ export async function checkFundingWalletBalance(): Promise<{
   canFund: number;
 }> {
   const env = await loadEnv();
-  const fundingWallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+  const fundingWallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(fundingWallet, "Funding wallet keypair should be created");
 
   const [balanceResult, balanceError] = await solanaService.getSolBalance({
@@ -106,7 +106,7 @@ export async function fundWallets(
   }
 
   const env = await loadEnv();
-  const fundingWallet = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+  const fundingWallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(fundingWallet, "Funding wallet keypair should be created");
 
   const [connection, connectionError] = await getConnection();

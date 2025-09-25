@@ -16,7 +16,6 @@ import {
 } from "@solana/web3.js";
 import { Bundle } from "jito-ts/dist/sdk/block-engine/types.js";
 import { getConnection } from "../../solana/connection.ts";
-import { fundWalletsWithTestnetAirdrop } from "./funding-fixture.ts";
 
 Deno.test({
   name: "Test Jito bundle on testnet with simple transfers",
@@ -24,13 +23,13 @@ Deno.test({
     const env = await loadEnv();
     assertExists(env.RPC_URL, "RPC_URL should be configured");
     assertExists(
-      env.PUMP_FUN_WALLET_PRIVATE_KEY,
-      "PUMP_FUN_WALLET_PRIVATE_KEY should be configured",
+      env.TEST_WALLET_PRIVATE_KEY,
+      "TEST_WALLET_PRIVATE_KEY should be configured",
     );
 
     logging.info("testnet-bundle-test", "Starting testnet Jito bundle test");
 
-    const wallet1 = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
+    const wallet1 = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     const wallet2 = Keypair.generate();
     const wallet3 = Keypair.generate();
 

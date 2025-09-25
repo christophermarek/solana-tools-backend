@@ -31,9 +31,9 @@ const envSchema = z.object({
 
   DB_PATH: z.string().min(1, "Database path is required"),
 
-  PUMP_FUN_WALLET_PRIVATE_KEY: z.string().min(
+  TEST_WALLET_PRIVATE_KEY: z.string().min(
     1,
-    "Pump Fun wallet private key is required",
+    "Test wallet private key is required",
   ),
 });
 
@@ -51,7 +51,7 @@ export async function loadEnv(): Promise<Env> {
       HELIUS_DEVNET_RPC: Deno.env.get("HELIUS_DEVNET_RPC"),
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
       DB_PATH: Deno.env.get("DB_PATH"),
-      PUMP_FUN_WALLET_PRIVATE_KEY: Deno.env.get("PUMP_FUN_WALLET_PRIVATE_KEY"),
+      TEST_WALLET_PRIVATE_KEY: Deno.env.get("TEST_WALLET_PRIVATE_KEY"),
     });
 
     config = env;
