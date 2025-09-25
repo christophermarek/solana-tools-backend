@@ -1,25 +1,18 @@
 import * as path from "https://deno.land/std@0.220.1/path/mod.ts";
-import { logWalletInfo } from "./fixtures.ts";
 
-console.log("Running Pump Fun service tests...");
+console.log("Running Jito service tests...");
 
 const testModules = [
-  "./sdk.test.ts",
-  "./create-and-buy.test.ts",
-  "./buy.test.ts",
-  "./sell.test.ts",
-  "./getSPLBalance.test.ts",
-  "./get-buy-instructions.test.ts",
-  "./get-sell-instructions.test.ts",
-  "./get-create-instructions.test.ts",
+  "./init.test.ts",
+  "./send-bundle.test.ts",
 ];
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
 
-const MAX_TEST_RUNTIME_MS = 60000;
+const MAX_TEST_RUNTIME_MS = 30000;
 const globalTimeout = setTimeout(() => {
   console.error(
-    "\n⏱️ Test suite exceeded maximum allowed runtime of 60 seconds",
+    "\n⏱️ Test suite exceeded maximum allowed runtime of 30 seconds",
   );
   console.error("Forcibly terminating tests to prevent hanging...");
 }, MAX_TEST_RUNTIME_MS);
@@ -31,10 +24,8 @@ async function runTests() {
 
   try {
     console.log("----------------------------------------");
-    console.log("🧪 Pump Fun Service Test Suite");
+    console.log("🧪 Jito Service Test Suite");
     console.log("----------------------------------------");
-
-    await logWalletInfo();
 
     const loadedModules = [];
     for (const testModule of testModules) {
@@ -88,7 +79,7 @@ async function runTests() {
 
     console.log("\n----------------------------------------");
     console.log(
-      `✅ Pump Fun service test modules loaded: ${passedCount}/${testCount} modules, ${failedCount} failed to load`,
+      `✅ Jito service test modules loaded: ${passedCount}/${testCount} modules, ${failedCount} failed to load`,
     );
     console.log("----------------------------------------");
     console.log("The actual tests will be executed by Deno's test runner.\n");

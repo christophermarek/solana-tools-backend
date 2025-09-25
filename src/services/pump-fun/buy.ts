@@ -1,5 +1,5 @@
 import { getSDK } from "./_index.ts";
-import * as solanaService from "../solana/index.ts";
+import * as solanaService from "../solana/_index.ts";
 import * as logging from "../../utils/logging.ts";
 import { Keypair, type VersionedTransactionResponse } from "@solana/web3.js";
 import { PumpFunErrors, SDKError } from "./_errors.ts";

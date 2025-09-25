@@ -7,15 +7,20 @@ import {
   TAG,
   TOKEN_PROGRAM_ID,
 } from "./_constants.ts";
+import { SolanaErrors } from "../solana/_errors.ts";
 
 // SPL is short for Solana Program Library
 export async function getSPLBalance(
   wallet: PublicKey,
   mint: PublicKey,
-): Promise<[number, null] | [null, PumpFunErrors]> {
+): Promise<[number, null] | [null, PumpFunErrors | SolanaErrors]> {
   logging.info(TAG, "Getting SPL token balance");
   try {
-    const connection = await connectionService.getConnection();
+    const [connection, connectionError] = await connectionService
+      .getConnection();
+    if (connectionError) {
+      return [null, connectionError];
+    }
 
     logging.info(TAG, "Wallet: ", wallet.toString());
     logging.info(TAG, "Mint: ", mint.toString());

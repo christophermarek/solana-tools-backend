@@ -1,11 +1,12 @@
 import { getSDK } from "./_index.ts";
-import * as solanaService from "../solana/index.ts";
+import * as solanaService from "../solana/_index.ts";
 import * as logging from "../../utils/logging.ts";
 import { Keypair, type VersionedTransactionResponse } from "@solana/web3.js";
 import { PumpFunErrors, SDKError } from "./_errors.ts";
 import { BondingCurveAccount } from "pumpdotfun-repumped-sdk";
 import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
+import { SolanaErrors } from "../solana/_errors.ts";
 
 export interface SellTokenParams {
   sellAmountSol?: number;
@@ -20,7 +21,7 @@ export async function sell(
   [{
     transactionResult: VersionedTransactionResponse;
     curve: BondingCurveAccount;
-  }, null] | [null, PumpFunErrors]
+  }, null] | [null, PumpFunErrors | SolanaErrors]
 > {
   logging.info(TAG, "Selling token", params);
 
@@ -50,7 +51,13 @@ export async function sell(
         "Either sellAmountSol or sellAmountSPL must be provided",
         new Error("Invalid sell parameters"),
       );
-      return [null, PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN];
+      return [
+        null,
+        {
+          type: "SDK_ERROR",
+          message: PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN,
+        } as SDKError,
+      ];
     }
 
     logging.info(TAG, "Mint: ", mint.publicKey.toString());
@@ -86,13 +93,25 @@ export async function sell(
 
     if (!res.results) {
       logging.info(TAG, "No results from sell");
-      return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_SELL];
+      return [
+        null,
+        {
+          type: "SDK_ERROR",
+          message: PUMP_FUN_ERRORS.ERROR_NO_RESULTS_SELL,
+        } as SDKError,
+      ];
     }
 
     const curve = await sdk.token.getBondingCurveAccount(mint.publicKey);
     if (!curve) {
       logging.info(TAG, "No curve from sell");
-      return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_SELL];
+      return [
+        null,
+        {
+          type: "SDK_ERROR",
+          message: PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_SELL,
+        } as SDKError,
+      ];
     }
 
     logging.info(TAG, "Sell successful");

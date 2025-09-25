@@ -16,6 +16,15 @@ export const PUMP_FUN_ERRORS = {
   ERROR_UNKNOWN_BUY: "Unknown error occurred during buy",
   ERROR_UNKNOWN_SELL: "Unknown error occurred during sell",
   ERROR_UNKNOWN_CREATE_AND_BUY: "Unknown error occurred during create and buy",
+  ERROR_GETTING_BUY_INSTRUCTIONS: "Error getting buy instructions",
+  ERROR_GETTING_SELL_INSTRUCTIONS: "Error getting sell instructions",
+  ERROR_GETTING_CREATE_INSTRUCTIONS: "Error getting create instructions",
+  ERROR_UNKNOWN_GET_BUY_INSTRUCTIONS:
+    "Unknown error occurred while getting buy instructions",
+  ERROR_UNKNOWN_GET_SELL_INSTRUCTIONS:
+    "Unknown error occurred while getting sell instructions",
+  ERROR_UNKNOWN_GET_CREATE_INSTRUCTIONS:
+    "Unknown error occurred while getting create instructions",
 } as const;
 
 export interface SDKError {

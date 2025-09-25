@@ -97,11 +97,8 @@ Deno.test({
 
     assertEquals(buyResult, null, "Buy result should be null on failure");
     assertExists(buyError, "Buy error should exist");
-    assertEquals(
-      buyError,
-      PUMP_FUN_ERRORS.ERROR_BUYING_TOKEN,
-      "Should return buying token error",
-    );
+    assertExists(buyError.type, "Error should have type");
+    assertEquals(buyError.type, "SDK_ERROR", "Should return SDK error type");
 
     logging.info("buy-test", "Buy failed as expected", { error: buyError });
   },

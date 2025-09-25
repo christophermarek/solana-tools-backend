@@ -3,7 +3,7 @@ import { loadEnv } from "../../../utils/env.ts";
 import { createAndBuy } from "../create-and-buy.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import { type CreateTokenMetadata } from "pumpdotfun-repumped-sdk";
-import * as solanaService from "../../solana/index.ts";
+import * as solanaService from "../../solana/_index.ts";
 import * as logging from "../../../utils/logging.ts";
 import {
   Keypair,
@@ -88,8 +88,13 @@ export async function getWalletInfo(): Promise<WalletInfo> {
   const keypair = keypairRepo.toKeypair(env.PUMP_FUN_WALLET_PRIVATE_KEY);
   assertExists(keypair, "Keypair should be created from private key");
 
-  const balance = await solanaService.getSolBalance(keypair.publicKey);
-  const solBalance = solanaService.lamportsToSol(balance);
+  const [balance, balanceError] = await solanaService.getSolBalance({
+    publicKey: keypair.publicKey,
+  });
+  if (balanceError) {
+    throw new Error(`Failed to get SOL balance: ${balanceError}`);
+  }
+  const solBalance = solanaService.lamportsToSol(balance.balance);
 
   return {
     keypair,

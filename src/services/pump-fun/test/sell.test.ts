@@ -127,11 +127,8 @@ Deno.test({
 
     assertEquals(sellResult, null, "Sell result should be null on failure");
     assertExists(sellError, "Sell error should exist");
-    assertEquals(
-      sellError,
-      PUMP_FUN_ERRORS.ERROR_SELLING_TOKEN,
-      "Should return selling token error",
-    );
+    assertExists(sellError.type, "Error should have type");
+    assertEquals(sellError.type, "SDK_ERROR", "Should return SDK error type");
 
     logging.info("sell-test", "Sell failed as expected", { error: sellError });
   },

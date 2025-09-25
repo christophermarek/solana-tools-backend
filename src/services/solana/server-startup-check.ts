@@ -1,5 +1,5 @@
 import * as logging from "../../utils/logging.ts";
-import * as solanaService from "./index.ts";
+import * as solanaService from "./_index.ts";
 import { PublicKey } from "@solana/web3.js";
 import { TAG } from "./_constants.ts";
 
