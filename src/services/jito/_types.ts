@@ -1,7 +1,7 @@
-import { SearcherClient } from "jito-ts/dist/sdk/block-engine/searcher.js";
+import { JitoJsonRpcClient } from "jito-js-rpc";
 
 export interface JitoService {
-  client: SearcherClient;
+  client: JitoJsonRpcClient;
   isInitialized: boolean;
 }
 

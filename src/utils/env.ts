@@ -13,19 +13,14 @@ export function clearConfig(): void {
 }
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default(
-    "development",
+  NODE_ENV: z.enum(["devnet", "testnet", "mainnet"]).default(
+    "devnet",
   ),
 
   RPC_URL: z.string().min(1, "RPC URL is required"),
   RPC_TIMEOUT_MS: z.coerce.number().positive().default(30000),
 
-  HELIUS_MAINNET_RPC: z.string().url().default(
-    "https://mainnet.helius-rpc.com/?api-key=8dce6436-7274-466f-b329-cd436cbbad42",
-  ),
-  HELIUS_DEVNET_RPC: z.string().url().default(
-    "https://devnet.helius-rpc.com/?api-key=8dce6436-7274-466f-b329-cd436cbbad42",
-  ),
+  HELIUS_RPC_URL: z.string().url(),
 
   RPC_REQUESTS_PER_SECOND: z.coerce.number().positive().default(5),
 
@@ -39,16 +34,19 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-export async function loadEnv(): Promise<Env> {
+export async function loadEnv(envFile?: string): Promise<Env> {
   try {
-    await load({ export: true });
+    if (envFile) {
+      await load({ export: true, envPath: envFile });
+    } else {
+      await load({ export: true });
+    }
 
     const env = envSchema.parse({
       NODE_ENV: Deno.env.get("NODE_ENV"),
       RPC_URL: Deno.env.get("RPC_URL"),
       RPC_TIMEOUT_MS: Deno.env.get("RPC_TIMEOUT_MS"),
-      HELIUS_MAINNET_RPC: Deno.env.get("HELIUS_MAINNET_RPC"),
-      HELIUS_DEVNET_RPC: Deno.env.get("HELIUS_DEVNET_RPC"),
+      HELIUS_RPC_URL: Deno.env.get("HELIUS_RPC_URL"),
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
       DB_PATH: Deno.env.get("DB_PATH"),
       TEST_WALLET_PRIVATE_KEY: Deno.env.get("TEST_WALLET_PRIVATE_KEY"),

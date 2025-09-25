@@ -1,5 +1,5 @@
 import { JitoError, JitoErrors } from "./_errors.ts";
-import { TAG } from "./_constants.ts";
+import { getRecommendedTipAmount, TAG } from "./_constants.ts";
 import * as logging from "../../utils/logging.ts";
 import { getTipAccounts } from "./tip-accounts.ts";
 import {
@@ -13,8 +13,9 @@ import {
 
 export interface TipTransactionParams {
   from: Keypair;
-  tipAmountLamports: number;
+  tipAmountLamports?: number;
   recentBlockhash: string;
+  priority?: "low" | "standard" | "high" | "critical";
 }
 
 export interface TipTransactionResult {
@@ -26,14 +27,22 @@ export interface TipTransactionResult {
 
 export async function createTipTransaction(
   params: TipTransactionParams,
+  timeoutMs: number = 10000,
 ): Promise<[TipTransactionResult, null] | [null, JitoErrors]> {
+  const tipAmount = params.tipAmountLamports ??
+    getRecommendedTipAmount(params.priority);
+
   logging.info(TAG, "Creating tip transaction", {
     from: params.from.publicKey.toString(),
-    tipAmount: params.tipAmountLamports,
+    tipAmount,
+    priority: params.priority || "standard",
+    timeoutMs,
   });
 
   try {
-    const [tipAccountsResult, tipAccountsError] = await getTipAccounts();
+    const [tipAccountsResult, tipAccountsError] = await getTipAccounts(
+      timeoutMs,
+    );
     if (tipAccountsError) {
       return [null, tipAccountsError];
     }
@@ -60,7 +69,7 @@ export async function createTipTransaction(
       SystemProgram.transfer({
         fromPubkey: params.from.publicKey,
         toPubkey: tipAccountPubkey,
-        lamports: params.tipAmountLamports,
+        lamports: tipAmount,
       }),
     );
 

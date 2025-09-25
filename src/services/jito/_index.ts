@@ -1,4 +1,4 @@
-import { searcherClient } from "jito-ts/dist/sdk/block-engine/searcher.js";
+import { JitoJsonRpcClient } from "jito-js-rpc";
 import { JitoError, JitoErrors } from "./_errors.ts";
 import { JitoService } from "./_types.ts";
 import { getBlockEngineUrl, TAG } from "./_constants.ts";
@@ -42,7 +42,7 @@ function initJito(): [JitoService, null] | [null, JitoErrors] {
       blockEngineUrl,
     });
 
-    const client = searcherClient(blockEngineUrl);
+    const client = new JitoJsonRpcClient(blockEngineUrl);
 
     const service: JitoService = {
       client,

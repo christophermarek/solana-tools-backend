@@ -1,13 +1,15 @@
 
 
 Goals:
-5. add jito bundle to service
-   - TDD -> jito module, bundle, buy bundle, sell bundle ( check that example with bulldoze and bundle generation)
- - ^ if theres a better flow for this do that
- - https://github.com/jito-labs/jito-ts, HOW DO I TEST THIS? might have to do tests live safely
-6. add jito bundle to API
-7. move the mass wallet code fixtures from the jito test, to a wallet service files, should be distribute.ts and reclaim.ts with tests for each, and add endpoints for that, make sure they use wallet labels
-8. Test API V1, good copy finish. above should be enough for a bot
+3. Test endpoints with devnet env and testnet env, there shouldnt be errors
+4. move the mass wallet code fixtures from the jito test, to a wallet service files, should be distribute.ts and reclaim.ts with tests for each, and add endpoints for that, make sure they use wallet labels
+5. Start adding the bot endpoints
+   - two simple bots maybe, buy, sell, 
+   - simple Volume bot
+   - simple Jito bundle bot for pumpfun
+   - think about it intelligently like distribution and cleanup when done
+   - how we can pipe the results of a bot run to another bot or something if its not complicated
+6. Test API V1, good copy finish. above should be enough for a bot
   -  pumpfun launch
   -  wallets
 

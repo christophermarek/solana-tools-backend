@@ -1,4 +1,8 @@
-import { Context, Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import {
+  Context,
+  Middleware,
+  Next,
+} from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as logging from "../utils/logging.ts";
 
 interface ErrorWithStatus extends Error {
@@ -22,7 +26,8 @@ export function createErrorHandler(): Middleware {
       ctx.response.body = {
         success: false,
         message,
-        ...(Deno.env.get("NODE_ENV") === "development" &&
+        ...((Deno.env.get("NODE_ENV") === "devnet" ||
+          Deno.env.get("NODE_ENV") === "testnet") &&
           { stack: err instanceof Error ? err.stack : undefined }),
       };
 

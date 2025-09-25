@@ -16,7 +16,7 @@ export async function init(): Promise<[boolean, null] | [null, SolanaErrors]> {
   try {
     const config = await getConfig();
     _requestsPerSecond = config.RPC_REQUESTS_PER_SECOND;
-    _enabled = config.NODE_ENV === "production" || _requestsPerSecond > 0;
+    _enabled = config.NODE_ENV === "mainnet" || _requestsPerSecond > 0;
 
     logging.info(TAG, "Initialized Solana RPC rate limiter", {
       enabled: _enabled,

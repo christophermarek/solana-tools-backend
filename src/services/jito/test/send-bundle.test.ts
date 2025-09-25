@@ -14,13 +14,12 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { Bundle } from "jito-ts/dist/sdk/block-engine/types.js";
 import { getConnection } from "../../solana/connection.ts";
 
 Deno.test({
   name: "Test Jito bundle on testnet with simple transfers",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.testnet");
     assertExists(env.RPC_URL, "RPC_URL should be configured");
     assertExists(
       env.TEST_WALLET_PRIVATE_KEY,
@@ -72,8 +71,8 @@ Deno.test({
 
     const [tipResult, tipError] = await createTipTransaction({
       from: wallet1,
-      tipAmountLamports: 1000, // 0.000001 SOL tip
       recentBlockhash: blockhash,
+      priority: "standard", // Use standard priority for testing
     });
 
     if (tipError) {
@@ -99,13 +98,12 @@ Deno.test({
     versionedTx2.sign([wallet1]);
 
     const transactions = [versionedTx1, versionedTx2, tipResult.transaction];
-    const bundle = new Bundle(transactions, 5);
 
     logging.info("testnet-bundle-test", "Created testnet bundle", {
-      transactionCount: bundle.packets.length,
+      transactionCount: transactions.length,
     });
 
-    const [result, error] = await sendBundle(bundle, 30000);
+    const [result, error] = await sendBundle(transactions, 30000);
 
     if (error) {
       const errorMessage = typeof error === "string"

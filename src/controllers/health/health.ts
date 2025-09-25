@@ -14,6 +14,6 @@ export const healthCheck: RouterMiddleware<string> = (ctx) => {
       transaction: true,
       strategy: true,
     },
-    environment: Deno.env.get("NODE_ENV") || "development",
+    environment: Deno.env.get("NODE_ENV"),
   });
 };

@@ -3,14 +3,15 @@ import { BundleResult } from "./_types.ts";
 import { TAG } from "./_constants.ts";
 import * as logging from "../../utils/logging.ts";
 import { getJitoService } from "./_index.ts";
-import { Bundle } from "jito-ts/dist/sdk/block-engine/types";
+import { VersionedTransaction } from "@solana/web3.js";
+import { Buffer } from "node:buffer";
 
 export async function sendBundle(
-  txBundle: Bundle,
+  transactions: VersionedTransaction[],
   timeoutMs: number = 30000,
 ): Promise<[BundleResult, null] | [null, JitoErrors]> {
   logging.info(TAG, "Sending bundle", {
-    transactionCount: txBundle.packets.length,
+    transactionCount: transactions.length,
     timeoutMs,
   });
 
@@ -26,30 +27,41 @@ export async function sendBundle(
       }, timeoutMs);
     });
 
-    const bundlePromise = service.client.sendBundle(txBundle);
+    const base64Transactions = transactions.map((tx) => {
+      const serialized = tx.serialize();
+      return Buffer.from(serialized).toString("base64");
+    });
+
+    const bundleParams: [string[], { encoding: "base64" }] = [
+      base64Transactions,
+      { encoding: "base64" },
+    ];
+
+    const bundlePromise = service.client.sendBundle(bundleParams);
     const result = await Promise.race([bundlePromise, timeoutPromise]);
 
-    if (!result.ok) {
+    if (result.error) {
       logging.error(TAG, "Failed to send bundle", {
         error: result.error,
-        errorCode: result.error.code,
-        errorDetails: result.error.details,
       });
       return [
         null,
         {
           type: "JITO_ERROR",
-          message:
-            `Jito sendBundle failed: ${result.error.details} (code: ${result.error.code})`,
+          message: `Jito sendBundle failed: ${result.error}`,
         } as JitoError,
       ];
     }
 
-    logging.info(TAG, "Bundle sent successfully", { bundleId: result.value });
+    // Extract bundle ID from the result
+    const bundleId = typeof result === "string"
+      ? result
+      : (result as { result?: string }).result || result;
+    logging.info(TAG, "Bundle sent successfully", { bundleId });
 
     return [
       {
-        bundleId: result.value,
+        bundleId: String(bundleId),
         success: true,
       },
       null,

@@ -10,7 +10,7 @@ import * as logging from "../../../utils/logging.ts";
 Deno.test({
   name: "Test Jito service initialization",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.testnet");
     assertExists(env.RPC_URL, "RPC_URL should be configured");
 
     clearJitoService();

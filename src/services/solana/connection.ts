@@ -29,16 +29,13 @@ export async function init(): Promise<
 async function _initializeConnection(): Promise<void> {
   const config = await getConfig();
 
-  const isProduction = config.NODE_ENV === "production";
-  const heliusRpcUrl = isProduction
-    ? config.HELIUS_MAINNET_RPC
-    : config.HELIUS_DEVNET_RPC;
+  const heliusRpcUrl = config.HELIUS_RPC_URL;
 
   const rpcUrl = heliusRpcUrl || config.RPC_URL;
 
   if (!rpcUrl) {
     throw new Error(
-      "No RPC URL configured. Please set RPC_URL or HELIUS_MAINNET_RPC/HELIUS_DEVNET_RPC in environment variables.",
+      "No RPC URL configured. Please set RPC_URL or HELIUS_RPC_URL in environment variables.",
     );
   }
 

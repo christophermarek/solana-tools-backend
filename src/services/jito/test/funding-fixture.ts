@@ -39,7 +39,7 @@ export async function checkFundingWalletBalance(): Promise<{
   requiredBalance: number;
   canFund: number;
 }> {
-  const env = await loadEnv();
+  const env = await loadEnv(".env.testnet");
   const fundingWallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(fundingWallet, "Funding wallet keypair should be created");
 
@@ -105,7 +105,7 @@ export async function fundWallets(
     };
   }
 
-  const env = await loadEnv();
+  const env = await loadEnv(".env.testnet");
   const fundingWallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(fundingWallet, "Funding wallet keypair should be created");
 

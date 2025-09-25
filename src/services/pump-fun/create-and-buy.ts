@@ -7,12 +7,7 @@ import {
   BondingCurveAccount,
   type CreateTokenMetadata,
 } from "pumpdotfun-repumped-sdk";
-import {
-  getIsMainnetRpc,
-  getPriorityFee,
-  SLIPPAGE_BPS,
-  TAG,
-} from "./_constants.ts";
+import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
 
 export async function createAndBuy(
@@ -97,18 +92,13 @@ export async function createAndBuy(
       return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_CREATE_AND_BUY];
     }
 
-    const pumpLink = `https://pump.fun/${mint.publicKey.toBase58()}?cluster=${
-      getIsMainnetRpc() ? "mainnet" : "devnet"
-    }`;
+    const pumpLink = `https://pump.fun/${mint.publicKey.toBase58()}`;
 
     logging.info(
       TAG,
       "Created! Pump link:",
       pumpLink,
     );
-    if (!getIsMainnetRpc()) {
-      logging.info(TAG, "[WARN] pump.fun does not work on devnet RPC");
-    }
 
     return [
       {

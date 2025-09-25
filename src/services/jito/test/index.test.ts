@@ -4,7 +4,9 @@ console.log("Running Jito service tests...");
 
 const testModules = [
   "./init.test.ts",
+  "./tip-accounts.test.ts",
   "./send-bundle.test.ts",
+  "./end-to-end-bundle.test.ts",
 ];
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
