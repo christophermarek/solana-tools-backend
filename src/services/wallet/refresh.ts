@@ -1,4 +1,4 @@
-import solanaService from "../solana/index.ts";
+import solanaService from "../solana/_index.ts";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";

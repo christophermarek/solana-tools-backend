@@ -5,6 +5,12 @@ import { getConfig } from "../../utils/env.ts";
 import { PumpFunErrors, SDKError } from "./_errors.ts";
 import * as logging from "../../utils/logging.ts";
 import { TAG } from "./_constants.ts";
+import { buy } from "./buy.ts";
+import { createAndBuy } from "./create-and-buy.ts";
+import { getBuyInstructionsBySolAmount } from "./get-buy-instructions.ts";
+import { getCreateInstructions } from "./get-create-instructions.ts";
+import { getSellInstructionsByTokenAmount } from "./get-sell-instructions.ts";
+import { sell } from "./sell.ts";
 
 const sdkCache = new Map<string, PumpFunSDK>();
 
@@ -59,3 +65,12 @@ function createSDK(
     return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }
+
+export {
+  buy,
+  createAndBuy,
+  getBuyInstructionsBySolAmount,
+  getCreateInstructions,
+  getSellInstructionsByTokenAmount,
+  sell,
+};

@@ -64,3 +64,9 @@ export interface ServiceInitResult {
   connectionValid: boolean;
   error?: string;
 }
+
+export interface BlockWaitResult {
+  success: boolean;
+  blocksWaited: number;
+  error?: string;
+}

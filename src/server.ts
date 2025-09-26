@@ -3,7 +3,7 @@ import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { loadEnv } from "./utils/env.ts";
 import { initializeDb } from "./db/client.ts";
 import { registerRoutes } from "./routes/index.ts";
-import * as solanaService from "./services/solana/index.ts";
+import * as solanaService from "./services/solana/_index.ts";
 import { validateSolanaServiceOnStartup } from "./services/solana/server-startup-check.ts";
 import { createDetailedLogger } from "./middleware/logging.ts";
 import { createErrorHandler } from "./middleware/error-handler.ts";
@@ -32,7 +32,7 @@ registerRoutes(app);
 async function initialize() {
   logging.info("system", "Starting application initialization...");
 
-  await loadEnv();
+  await loadEnv(".env.devnet");
   await initializeDb();
 
   await solanaService.init();

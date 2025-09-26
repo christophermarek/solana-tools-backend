@@ -1,7 +1,7 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import solanaService from "../../services/solana/index.ts";
+import solanaService from "../../services/solana/_index.ts";
 
 export const solanaHealthCheck: RouterMiddleware<string> = async (ctx) => {
   const requestId = getRequestId(ctx);

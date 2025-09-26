@@ -14,6 +14,7 @@ export * from "./balance.ts";
 export * from "./connection.ts";
 export * from "./rate-limiter.ts";
 export * from "./server-startup-check.ts";
+export * from "./wait-for-blocks.ts";
 
 export async function init(): Promise<
   [ServiceInitResult, null] | [null, SolanaErrors]
