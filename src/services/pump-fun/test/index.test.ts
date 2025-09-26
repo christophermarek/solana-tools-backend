@@ -8,7 +8,7 @@ const testModules = [
   "./create-and-buy.test.ts",
   "./buy.test.ts",
   "./sell.test.ts",
-  "./getSPLBalance.test.ts",
+  "./get-spl-balance.test.ts",
   "./get-buy-instructions.test.ts",
   "./get-sell-instructions.test.ts",
   "./get-create-instructions.test.ts",

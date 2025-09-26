@@ -62,13 +62,83 @@ export async function buy(
       return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_BUY];
     }
 
+    const signature = res.signature;
+
+    if (!signature) {
+      const errorMsg = "Could not find signature in transaction result";
+      logging.error(TAG, errorMsg, {
+        res: res,
+        results: res.results,
+      });
+      return [null, { type: "SDK_ERROR", message: errorMsg } as SDKError];
+    }
+    logging.info(TAG, "Buy transaction submitted", {
+      signature,
+      solscanUrl: `https://solscan.io/tx/${signature}`,
+    });
+
+    const [connection, connectionError] = await solanaService.getConnection();
+    if (connectionError) {
+      logging.warn(
+        TAG,
+        "Failed to get connection for confirmation, proceeding without confirmation",
+        {
+          error: connectionError,
+        },
+      );
+    } else {
+      const [confirmationResult, confirmationError] = await solanaService
+        .confirmTransaction(
+          connection,
+          signature,
+          {
+            timeoutMs: 45000,
+            retryCount: 2,
+            retryDelayMs: 3000,
+            commitment: "confirmed",
+          },
+        );
+
+      if (confirmationError) {
+        logging.warn(
+          TAG,
+          "Transaction confirmation failed, but transaction may have succeeded",
+          {
+            signature,
+            error: confirmationError,
+          },
+        );
+
+        const [statusCheck, statusError] = await solanaService
+          .checkTransactionStatus(connection, signature);
+        if (statusError || !statusCheck) {
+          logging.warn(TAG, "Transaction status check also failed", {
+            signature,
+            statusError,
+          });
+        } else {
+          logging.info(TAG, "Transaction confirmed via status check", {
+            signature,
+          });
+        }
+      } else {
+        logging.info(TAG, "Transaction confirmed successfully", {
+          signature,
+          confirmedAt: confirmationResult?.confirmedAt,
+        });
+      }
+    }
+
     const curve = await sdk.token.getBondingCurveAccount(mint.publicKey);
     if (!curve) {
       logging.info(TAG, "No curve from buy");
       return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_BUY];
     }
 
-    logging.info(TAG, "Buy successful");
+    logging.info(TAG, "Buy operation completed", {
+      signature,
+      curveExists: !!curve,
+    });
 
     return [
       {

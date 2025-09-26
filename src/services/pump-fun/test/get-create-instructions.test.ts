@@ -11,7 +11,7 @@ import { type CreateTokenMetadata } from "pumpdotfun-repumped-sdk";
 Deno.test({
   name: "Test getCreateInstructions success",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const creator = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(creator, "Creator keypair should be created from private key");
 
@@ -54,7 +54,7 @@ Deno.test({
 Deno.test({
   name: "Test getCreateInstructions failure - SDK error",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const creator = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(creator, "Creator keypair should be created from private key");
 

@@ -10,6 +10,11 @@ import { createBotError } from "../_utils.ts";
 import * as solanaService from "../../solana/_index.ts";
 import * as pumpFunService from "../../pump-fun/_index.ts";
 
+interface TransactionResultWithSignature {
+  signature: string;
+  [key: string]: unknown;
+}
+
 export const prepareCycleParams: BotCyclePreparator<
   VolumeBot1Params,
   VolumeBot1CycleParams
@@ -55,7 +60,7 @@ export const executeCycle: BotCycleExecutor<
       volumeAmountSol,
     });
 
-    const [, buyError] = await pumpFunService.buy(
+    const [buyResult, buyError] = await pumpFunService.buy(
       wallet,
       mint,
       volumeAmountSol,
@@ -72,11 +77,21 @@ export const executeCycle: BotCycleExecutor<
       return [result, null];
     }
 
-    result.buySuccess = true;
-    result.buyTransactionSignature = "transaction_completed";
+    if (!buyResult) {
+      const errorMsg = createBotError(
+        "Buy operation returned no result",
+        new Error("No result from buy operation"),
+      );
+      result.buyError = errorMsg;
+      return [result, null];
+    }
 
-    logging.info(TAG, "Buy operation successful", {
+    result.buySuccess = true;
+    result.buyTransactionSignature = (buyResult as any).signature;
+
+    logging.info(TAG, "Buy operation completed", {
       transactionSignature: result.buyTransactionSignature,
+      solscanUrl: `https://solscan.io/tx/${result.buyTransactionSignature}`,
     });
 
     if (blocksToWaitBeforeSell > 0) {
@@ -105,7 +120,7 @@ export const executeCycle: BotCycleExecutor<
       volumeAmountSol,
     });
 
-    const [, sellError] = await pumpFunService.sell(wallet, mint, {
+    const [sellResult, sellError] = await pumpFunService.sell(wallet, mint, {
       sellAmountSol: volumeAmountSol,
     });
 
@@ -120,11 +135,21 @@ export const executeCycle: BotCycleExecutor<
       return [result, null];
     }
 
-    result.sellSuccess = true;
-    result.sellTransactionSignature = "transaction_completed";
+    if (!sellResult) {
+      const errorMsg = createBotError(
+        "Sell operation returned no result",
+        new Error("No result from sell operation"),
+      );
+      result.sellError = errorMsg;
+      return [result, null];
+    }
 
-    logging.info(TAG, "Sell operation successful", {
+    result.sellSuccess = true;
+    result.sellTransactionSignature = (sellResult as any).signature;
+
+    logging.info(TAG, "Sell operation completed", {
       transactionSignature: result.sellTransactionSignature,
+      solscanUrl: `https://solscan.io/tx/${result.sellTransactionSignature}`,
     });
 
     result.success = result.buySuccess && result.sellSuccess;

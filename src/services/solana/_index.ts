@@ -1,6 +1,7 @@
 import * as connectionService from "./connection.ts";
 import * as rateLimiter from "./rate-limiter.ts";
 import * as balanceService from "./balance.ts";
+import * as transactionConfirmation from "./transaction-confirmation.ts";
 import * as logging from "../../utils/logging.ts";
 import { TAG } from "./_constants.ts";
 import { SOLANA_ERRORS, SolanaErrors } from "./_errors.ts";
@@ -14,6 +15,7 @@ export * from "./balance.ts";
 export * from "./connection.ts";
 export * from "./rate-limiter.ts";
 export * from "./server-startup-check.ts";
+export * from "./transaction-confirmation.ts";
 export * from "./wait-for-blocks.ts";
 
 export async function init(): Promise<
@@ -68,6 +70,11 @@ export {
 
 export { waitForRateLimit } from "./rate-limiter.ts";
 
+export {
+  checkTransactionStatus,
+  confirmTransaction,
+} from "./transaction-confirmation.ts";
+
 export { lamportsToSol, solToLamports } from "./_utils.ts";
 
 export default {
@@ -83,4 +90,6 @@ export default {
   getBalanceByPublicKey: balanceService.getBalanceByPublicKey,
 
   waitForRateLimit: rateLimiter.waitForRateLimit,
+  confirmTransaction: transactionConfirmation.confirmTransaction,
+  checkTransactionStatus: transactionConfirmation.checkTransactionStatus,
 };

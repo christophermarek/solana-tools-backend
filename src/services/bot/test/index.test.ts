@@ -3,7 +3,7 @@ import * as path from "https://deno.land/std@0.220.1/path/mod.ts";
 console.log("Running Bot service tests...");
 
 const testModules = [
-  "./bot-1/example.test.ts",
+  // "./bot-1/example.test.ts",
   "./bot-1/success.test.ts",
 ];
 

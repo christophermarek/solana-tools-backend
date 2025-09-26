@@ -12,7 +12,7 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 Deno.test({
   name: "Test getSellInstructionsByTokenAmount success",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const seller = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(seller, "Seller keypair should be created from private key");
 
@@ -59,7 +59,7 @@ Deno.test({
 Deno.test({
   name: "Test getSellInstructionsByTokenAmount failure - non-existent token",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const seller = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(seller, "Seller keypair should be created from private key");
 

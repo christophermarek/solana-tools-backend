@@ -8,7 +8,7 @@ import logging from "../../../utils/logging.ts";
 Deno.test({
   name: "Test createAndBuy with TEST_WALLET_PRIVATE_KEY as creator",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     assertExists(
       env.TEST_WALLET_PRIVATE_KEY,
       "TEST_WALLET_PRIVATE_KEY should be configured",

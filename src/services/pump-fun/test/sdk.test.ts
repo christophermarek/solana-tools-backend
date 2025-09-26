@@ -9,7 +9,7 @@ import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 Deno.test({
   name: "Test 1: Call getSDK once, init SDK success",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     assertExists(env.RPC_URL, "RPC_URL should be configured");
     assertExists(
       env.TEST_WALLET_PRIVATE_KEY,
@@ -42,7 +42,7 @@ Deno.test({
 Deno.test({
   name: "Test 2: Call getSDK again, returns existing instance",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const wallet = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(wallet, "Wallet keypair should be created from private key");
 
@@ -70,7 +70,7 @@ Deno.test({
 Deno.test({
   name: "Test 3: Test SDK with different wallets",
   async fn() {
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const pumpFunModule = await import("../_index.ts");
     pumpFunModule.clearSDK();
 

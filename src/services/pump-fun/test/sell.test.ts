@@ -17,7 +17,7 @@ Deno.test({
   async fn() {
     await logWalletInfo();
 
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const trader = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(trader, "Trader keypair should be created from private key");
 
@@ -112,7 +112,7 @@ Deno.test({
   async fn() {
     await logWalletInfo();
 
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const seller = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(seller, "Seller keypair should be created from private key");
 
@@ -141,7 +141,7 @@ Deno.test({
   async fn() {
     await logWalletInfo();
 
-    const env = await loadEnv();
+    const env = await loadEnv(".env.devnet");
     const trader = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
     assertExists(trader, "Trader keypair should be created from private key");
 
