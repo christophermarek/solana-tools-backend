@@ -9,11 +9,44 @@ import {
 } from "./_types.ts";
 import { BotErrors } from "./_errors.ts";
 import { createBotError, waitForInterval } from "./_utils.ts";
+import { volumeBot1 } from "./_index.ts";
+import {
+  VolumeBot1AggregatedResults,
+  VolumeBot1CycleParams,
+  VolumeBot1CycleResult,
+  VolumeBot1Params,
+} from "./bot1/_types.ts";
 
-const botRegistry = new Map<
-  BotType,
-  Bot<unknown, unknown, BotCycleResult<Record<string, unknown>>, unknown>
->();
+type BotRegistryEntry = {
+  type: "volume-bot-1";
+  bot: Bot<
+    VolumeBot1Params,
+    VolumeBot1CycleParams,
+    VolumeBot1CycleResult,
+    VolumeBot1AggregatedResults
+  >;
+};
+
+type GenericBot = Bot<
+  Record<string, unknown>,
+  Record<string, unknown>,
+  BotCycleResult<Record<string, unknown>>,
+  Record<string, unknown>
+>;
+
+const botRegistry = new Map<BotType, BotRegistryEntry>();
+
+function initializeBotRegistry(): void {
+  logging.info(TAG, "Initializing bot registry...");
+
+  registerBot(volumeBot1);
+
+  logging.info(TAG, "Bot registry initialization completed", {
+    registeredBots: Array.from(botRegistry.keys()),
+  });
+}
+
+initializeBotRegistry();
 
 export function registerBot<
   TBotParams,
@@ -23,40 +56,40 @@ export function registerBot<
 >(
   bot: Bot<TBotParams, TBotCycleParams, TBotCycleResult, TBotResults>,
 ): void {
-  botRegistry.set(
-    bot.botType,
-    bot as unknown as Bot<
-      unknown,
-      unknown,
-      BotCycleResult<Record<string, unknown>>,
-      unknown
-    >,
-  );
+  switch (bot.botType) {
+    case "volume-bot-1":
+      botRegistry.set(bot.botType, {
+        type: "volume-bot-1",
+        bot: bot as unknown as Bot<
+          VolumeBot1Params,
+          VolumeBot1CycleParams,
+          VolumeBot1CycleResult,
+          VolumeBot1AggregatedResults
+        >,
+      });
+      break;
+    default:
+      throw new Error(`Unknown bot type: ${bot.botType}`);
+  }
+
   logging.info(TAG, "Bot registered", { botType: bot.botType });
 }
 
-export function getBot<
-  TBotParams,
-  TBotCycleParams,
-  TBotCycleResult extends BotCycleResult<Record<string, unknown>>,
-  TBotResults,
->(
-  botType: BotType,
-): Bot<TBotParams, TBotCycleParams, TBotCycleResult, TBotResults> | undefined {
-  return botRegistry.get(botType) as
-    | Bot<TBotParams, TBotCycleParams, TBotCycleResult, TBotResults>
-    | undefined;
+export function getBot(botType: BotType): GenericBot | undefined {
+  const entry = botRegistry.get(botType);
+  return entry?.bot as unknown as GenericBot;
 }
 
-export async function executeBot<
-  TBotParams,
-  TBotCycleParams,
-  TBotCycleResult extends BotCycleResult<Record<string, unknown>>,
-  TBotResults,
->(
-  config: BotExecutorConfig<TBotParams>,
-  bot: Bot<TBotParams, TBotCycleParams, TBotCycleResult, TBotResults>,
-): Promise<[BotExecutorResult<TBotResults>, null] | [null, BotErrors]> {
+export function getRegisteredBots(): BotType[] {
+  return Array.from(botRegistry.keys());
+}
+
+export async function executeBot(
+  config: BotExecutorConfig<Record<string, unknown>>,
+  bot: GenericBot,
+): Promise<
+  [BotExecutorResult<Record<string, unknown>>, null] | [null, BotErrors]
+> {
   const { botType, botParams, executionConfig } = config;
   const { repeatCount, intervalSeconds } = executionConfig;
 
@@ -78,17 +111,17 @@ export async function executeBot<
     }];
   }
 
-  const result: BotExecutorResult<TBotResults> = {
+  const result: BotExecutorResult<Record<string, unknown>> = {
     success: true,
     totalCycles: repeatCount,
     successfulCycles: 0,
     failedCycles: 0,
     errors: [],
     executionTimeMs: 0,
-    botSpecificResults: {} as TBotResults,
+    botSpecificResults: {} as Record<string, unknown>,
   };
 
-  const cycleResults: TBotCycleResult[] = [];
+  const cycleResults: BotCycleResult<Record<string, unknown>>[] = [];
 
   try {
     for (let i = 0; i < repeatCount; i++) {
@@ -165,8 +198,11 @@ export async function executeBot<
 
     return [result, null];
   } catch (error) {
-    logging.error(TAG, "Bot executor failed", error);
     const errorMessage = createBotError("Bot executor failed", error as Error);
+    logging.error(TAG, "Bot executor failed", {
+      error: errorMessage,
+      originalError: error instanceof Error ? error.message : String(error),
+    });
 
     result.success = false;
     result.errors.push(errorMessage);
@@ -179,12 +215,11 @@ export async function executeBot<
   }
 }
 
-export function executeBotFromRegistry<
-  TBotParams,
-  TBotResults = Record<string, never>,
->(
-  config: BotExecutorConfig<TBotParams>,
-): Promise<[BotExecutorResult<TBotResults>, null] | [null, BotErrors]> {
+export function executeBotFromRegistry(
+  config: BotExecutorConfig<Record<string, unknown>>,
+): Promise<
+  [BotExecutorResult<Record<string, unknown>>, null] | [null, BotErrors]
+> {
   const { botType } = config;
 
   const bot = getBot(botType);
@@ -197,13 +232,5 @@ export function executeBotFromRegistry<
     }]);
   }
 
-  return executeBot(
-    config,
-    bot as Bot<
-      TBotParams,
-      unknown,
-      BotCycleResult<Record<string, unknown>>,
-      TBotResults
-    >,
-  );
+  return executeBot(config, bot);
 }

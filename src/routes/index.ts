@@ -2,6 +2,7 @@ import { Application, Context } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { walletRouter } from "./wallet.ts";
 import { healthRouter } from "./health.ts";
 import { pumpFunRouter } from "./pump-fun.ts";
+import { botRouter } from "./bot.ts";
 import * as logging from "../utils/logging.ts";
 import { ResponseUtil } from "./response.ts";
 
@@ -28,6 +29,10 @@ export function registerRoutes(app: Application): void {
   logging.info("system", "Registering pump-fun routes...");
   app.use(pumpFunRouter.routes());
   app.use(pumpFunRouter.allowedMethods());
+
+  logging.info("system", "Registering bot routes...");
+  app.use(botRouter.routes());
+  app.use(botRouter.allowedMethods());
 
   logging.info("system", "Registering not found handler...");
   app.use(notFoundHandler);

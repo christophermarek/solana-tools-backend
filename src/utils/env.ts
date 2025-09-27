@@ -30,6 +30,8 @@ const envSchema = z.object({
     1,
     "Test wallet private key is required",
   ),
+
+  MAX_CONCURRENT_BOTS: z.coerce.number().positive().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -50,6 +52,7 @@ export async function loadEnv(envFile?: string): Promise<Env> {
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
       DB_PATH: Deno.env.get("DB_PATH"),
       TEST_WALLET_PRIVATE_KEY: Deno.env.get("TEST_WALLET_PRIVATE_KEY"),
+      MAX_CONCURRENT_BOTS: Deno.env.get("MAX_CONCURRENT_BOTS"),
     });
 
     config = env;

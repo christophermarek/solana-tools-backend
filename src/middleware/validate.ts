@@ -1,6 +1,5 @@
 import { Next, RouterContext } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import { ZodError } from "zod";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { z, ZodError } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 interface ValidationOptions {
   bodySchema?: z.ZodType<unknown, z.ZodTypeDef, unknown>;

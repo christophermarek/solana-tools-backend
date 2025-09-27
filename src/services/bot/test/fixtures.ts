@@ -48,6 +48,7 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
   logging.info("bot-test-fixtures", "Creating new test token");
   const env = await loadEnv(".env.devnet");
   await initializeDb();
+
   assertExists(
     env.TEST_WALLET_PRIVATE_KEY,
     "TEST_WALLET_PRIVATE_KEY should be configured",
