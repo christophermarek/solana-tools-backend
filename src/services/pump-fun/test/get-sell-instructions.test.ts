@@ -7,7 +7,7 @@ import { getSellInstructionsByTokenAmount } from "../get-sell-instructions.ts";
 import { createTestToken } from "./fixtures.ts";
 import * as keypairRepo from "../../../db/repositories/keypairs.ts";
 import * as logging from "../../../utils/logging.ts";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 Deno.test({
   name: "Test getSellInstructionsByTokenAmount success",

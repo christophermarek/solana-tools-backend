@@ -10,11 +10,6 @@ import { createBotError } from "../_utils.ts";
 import * as solanaService from "../../solana/_index.ts";
 import * as pumpFunService from "../../pump-fun/_index.ts";
 
-interface TransactionResultWithSignature {
-  signature: string;
-  [key: string]: unknown;
-}
-
 export const prepareCycleParams: BotCyclePreparator<
   VolumeBot1Params,
   VolumeBot1CycleParams
@@ -87,7 +82,7 @@ export const executeCycle: BotCycleExecutor<
     }
 
     result.buySuccess = true;
-    result.buyTransactionSignature = (buyResult as any).signature;
+    result.buyTransactionSignature = buyResult.signature;
 
     logging.info(TAG, "Buy operation completed", {
       transactionSignature: result.buyTransactionSignature,
@@ -145,7 +140,7 @@ export const executeCycle: BotCycleExecutor<
     }
 
     result.sellSuccess = true;
-    result.sellTransactionSignature = (sellResult as any).signature;
+    result.sellTransactionSignature = sellResult.signature;
 
     logging.info(TAG, "Sell operation completed", {
       transactionSignature: result.sellTransactionSignature,

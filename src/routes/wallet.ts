@@ -11,7 +11,6 @@ import {
 import {
   bulkEditWallets,
   createWallets,
-  getBalance,
   getWallet,
   importWallet,
   listWallets,

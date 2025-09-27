@@ -58,7 +58,7 @@ Deno.test({
         });
         const errorMessage = typeof error === "string"
           ? error
-          : (error as any).message || JSON.stringify(error);
+          : (error as Error).message || JSON.stringify(error);
         throw new Error(`Bot execution failed: ${errorMessage}`);
       }
 
@@ -167,7 +167,7 @@ Deno.test({
         );
         const errorMessage = typeof error === "string"
           ? error
-          : (error as any).message || JSON.stringify(error);
+          : (error as Error).message || JSON.stringify(error);
         throw new Error(`Multi-cycle execution failed: ${errorMessage}`);
       }
 

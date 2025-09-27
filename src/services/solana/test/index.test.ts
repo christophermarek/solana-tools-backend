@@ -65,7 +65,7 @@ async function runTests() {
     console.log("▶️ Executing test modules sequentially...");
     console.log("----------------------------------------\n");
 
-    for (const { module, name } of loadedModules) {
+    for (const { name } of loadedModules) {
       console.log(`\n🔍 Running tests from ${name}:`);
       testCount++;
 

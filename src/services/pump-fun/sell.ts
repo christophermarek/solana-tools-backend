@@ -7,6 +7,8 @@ import { BondingCurveAccount } from "pumpdotfun-repumped-sdk";
 import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
 import { SolanaErrors } from "../solana/_errors.ts";
+import * as transactionRepo from "../../db/repositories/transactions.ts";
+import { TransactionStatus } from "../../db/repositories/transactions.ts";
 
 export interface SellTokenParams {
   sellAmountSol?: number;
@@ -21,9 +23,11 @@ export async function sell(
   [{
     transactionResult: VersionedTransactionResponse;
     curve: BondingCurveAccount;
+    signature: string;
   }, null] | [null, PumpFunErrors | SolanaErrors]
 > {
   logging.info(TAG, "Selling token", params);
+  let transactionId: number | null = null;
 
   try {
     const [sdk, error] = getSDK(seller);
@@ -113,6 +117,17 @@ export async function sell(
       return [null, { type: "SDK_ERROR", message: errorMsg } as SDKError];
     }
 
+    const transaction = await transactionRepo.create({
+      signature,
+      sender_public_key: seller.publicKey.toString(),
+      status: TransactionStatus.PENDING,
+      slot: res.results.slot,
+      slippage_bps: Number(SLIPPAGE_BPS),
+      priority_fee_unit_limit: priorityFee.unitLimit,
+      priority_fee_unit_price_lamports: priorityFee.unitPrice,
+    });
+    transactionId = transaction.id;
+
     logging.info(TAG, "Sell transaction submitted", {
       signature,
       solscanUrl: `https://solscan.io/tx/${signature}`,
@@ -167,6 +182,16 @@ export async function sell(
           signature,
           confirmedAt: confirmationResult?.confirmedAt,
         });
+
+        if (transactionId) {
+          await transactionRepo.update(transactionId, {
+            status: TransactionStatus.CONFIRMED,
+            confirmed_at: new Date(
+              confirmationResult?.confirmedAt || Date.now(),
+            ),
+            commitment_level: "confirmed",
+          });
+        }
       }
     }
 
@@ -191,6 +216,7 @@ export async function sell(
       {
         transactionResult: res.results,
         curve,
+        signature,
       },
       null,
     ];
@@ -199,6 +225,14 @@ export async function sell(
     const errorMessage = error instanceof Error
       ? error.message
       : "Unknown error occurred during sell";
+
+    if (transactionId) {
+      await transactionRepo.update(transactionId, {
+        status: TransactionStatus.FAILED,
+        error_message: errorMessage,
+      });
+    }
+
     return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }

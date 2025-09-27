@@ -9,6 +9,8 @@ import {
 } from "pumpdotfun-repumped-sdk";
 import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
+import * as transactionRepo from "../../db/repositories/transactions.ts";
+import { TransactionStatus } from "../../db/repositories/transactions.ts";
 
 export async function createAndBuy(
   creator: Keypair,
@@ -23,6 +25,8 @@ export async function createAndBuy(
   }, null] | [null, PumpFunErrors]
 > {
   logging.info(TAG, "Creating token & first buy");
+  let transactionId: number | null = null;
+
   try {
     const [sdk, error] = getSDK(creator);
     if (error) {
@@ -86,13 +90,40 @@ export async function createAndBuy(
       return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_CREATE_AND_BUY];
     }
 
+    const transaction = await transactionRepo.create({
+      signature: res.signature,
+      sender_public_key: creator.publicKey.toString(),
+      status: TransactionStatus.PENDING,
+      slot: res.results.slot,
+      slippage_bps: Number(SLIPPAGE_BPS),
+      priority_fee_unit_limit: priorityFee.unitLimit,
+      priority_fee_unit_price_lamports: priorityFee.unitPrice,
+    });
+    transactionId = transaction.id;
+
     const curve = await sdk.token.getBondingCurveAccount(mint.publicKey);
     if (!curve) {
       logging.info(TAG, "No curve from create and buy");
+
+      if (transactionId) {
+        await transactionRepo.update(transactionId, {
+          status: TransactionStatus.FAILED,
+          error_message: "No curve from create and buy",
+        });
+      }
+
       return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_CREATE_AND_BUY];
     }
 
     const pumpLink = `https://pump.fun/${mint.publicKey.toBase58()}`;
+
+    if (transactionId) {
+      await transactionRepo.update(transactionId, {
+        status: TransactionStatus.CONFIRMED,
+        confirmed_at: new Date(),
+        commitment_level: "confirmed",
+      });
+    }
 
     logging.info(
       TAG,
@@ -114,6 +145,14 @@ export async function createAndBuy(
     const errorMessage = error instanceof Error
       ? error.message
       : "Unknown error occurred during create and buy";
+
+    if (transactionId) {
+      await transactionRepo.update(transactionId, {
+        status: TransactionStatus.FAILED,
+        error_message: errorMessage,
+      });
+    }
+
     return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
   }
 }

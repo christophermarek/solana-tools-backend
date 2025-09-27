@@ -23,7 +23,7 @@ Deno.test({
       success: !!result,
       error: typeof error === "string"
         ? error
-        : (error as any)?.message || String(error),
+        : (error as Error)?.message || String(error),
     });
 
     if (error) {
@@ -36,7 +36,7 @@ Deno.test({
       logging.error("tip-accounts-test", "Tip accounts failed", {
         error: typeof error === "string"
           ? error
-          : (error as any)?.message || String(error),
+          : (error as Error)?.message || String(error),
         errorType: typeof error,
         errorDetails: JSON.stringify(error, null, 2),
         duration,
@@ -45,7 +45,7 @@ Deno.test({
         `Tip accounts failed: ${
           typeof error === "string"
             ? error
-            : (error as any)?.message || String(error)
+            : (error as Error)?.message || String(error)
         }`,
       );
     } else {

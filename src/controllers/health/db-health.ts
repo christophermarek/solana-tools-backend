@@ -11,7 +11,7 @@ export const dbHealthCheck: RouterMiddleware<string> = async (ctx) => {
     const db = getClient();
 
     const startTime = performance.now();
-    const result = await db.prepare("SELECT 1 as test").get();
+    await db.prepare("SELECT 1 as test").get();
     const endTime = performance.now();
     const responseTimeMs = Math.round(endTime - startTime);
 

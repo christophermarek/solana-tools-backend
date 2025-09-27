@@ -13,6 +13,7 @@ import {
   type VersionedTransactionResponse,
 } from "@solana/web3.js";
 import { BondingCurveAccount } from "pumpdotfun-repumped-sdk";
+import { initializeDb } from "../../../db/client.ts";
 
 export interface TestToken {
   mint: Keypair;
@@ -46,6 +47,7 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
 
   logging.info("bot-test-fixtures", "Creating new test token");
   const env = await loadEnv(".env.devnet");
+  await initializeDb();
   assertExists(
     env.TEST_WALLET_PRIVATE_KEY,
     "TEST_WALLET_PRIVATE_KEY should be configured",
@@ -93,6 +95,7 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
 
 export async function getWalletInfo(): Promise<WalletInfo> {
   const env = await loadEnv(".env.devnet");
+  await initializeDb();
   const keypair = keypairRepo.toKeypair(env.TEST_WALLET_PRIVATE_KEY);
   assertExists(keypair, "Keypair should be created from private key");
 
