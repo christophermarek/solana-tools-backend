@@ -1,11 +1,27 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import walletService from "../../services/wallet/_index.ts";
 import { RefreshWalletBalancesPayload } from "../../schemas/wallet.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
+import {
+  AppRouterContext,
+  AppState,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const refreshWalletBalance: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
+export const refreshWalletBalance: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppState
+> = async (ctx: AppRouterContext) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, telegramUser] = contextData;
 
   try {
     const body = await ctx.request.body({ type: "json" })

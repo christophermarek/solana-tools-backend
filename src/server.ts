@@ -9,12 +9,14 @@ import { createDetailedLogger } from "./middleware/logging.ts";
 import { createErrorHandler } from "./middleware/error-handler.ts";
 import { createRequestIdMiddleware } from "./middleware/request-id.ts";
 import { createResponseTimeMiddleware } from "./middleware/response-time.ts";
+import { createAuthenticateApiClientMiddleware } from "./middleware/authenticate-api-client.ts";
 import * as logging from "./utils/logging.ts";
 
 const app = new Application();
 app.use(createErrorHandler());
 app.use(oakCors());
 app.use(createRequestIdMiddleware());
+app.use(createAuthenticateApiClientMiddleware());
 
 console.log("Registering detailed logging middleware...");
 app.use(createDetailedLogger({

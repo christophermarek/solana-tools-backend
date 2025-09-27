@@ -1,12 +1,32 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import walletService from "../../services/wallet/_index.ts";
 import { BulkEditWalletsPayload } from "../../schemas/wallet.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
+import {
+  AppRouterContext,
+  AppState,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const bulkEditWallets: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
-  logging.info(requestId, "Bulk editing wallets");
+export const bulkEditWallets: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppState
+> = async (ctx: AppRouterContext) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, telegramUser] = contextData;
+
+  logging.info(
+    requestId,
+    `Bulk editing wallets for user ${telegramUser.telegram_id}`,
+  );
 
   try {
     const body = await ctx.request.body({ type: "json" })

@@ -1,4 +1,4 @@
-import * as keypairRepo from "../db/repositories/keypairs.ts";
+import { AppContext } from "../middleware/_context.ts";
 function colorize(text: string, color: string): string {
   const colors: Record<string, string> = {
     reset: "\x1b[0m",
@@ -75,7 +75,7 @@ export function formatRequestId(requestId: string, useColors = true): string {
     : `[${requestId}]`;
 }
 
-export function getRequestId(ctx: { state: { requestId?: string } }): string {
+export function getRequestId(ctx: AppContext): string {
   return ctx.state.requestId || "unknown";
 }
 
@@ -167,20 +167,6 @@ export function formatErrorResponse(message: string, err: unknown) {
   };
 }
 
-export function formatWalletResponse(kp: keypairRepo.DbKeypair) {
-  return {
-    id: kp.id,
-    publicKey: kp.public_key,
-    label: kp.label,
-    created: kp.created_at,
-    isActive: kp.is_active,
-    solBalance: kp.sol_balance ? Number(kp.sol_balance) : null,
-    wsolBalance: kp.wsol_balance ? Number(kp.wsol_balance) : null,
-    lastBalanceUpdate: kp.last_balance_update,
-    balanceStatus: kp.balance_status,
-  };
-}
-
 function safeStringify(obj: unknown): string {
   return JSON.stringify(obj, (_key, value) => {
     if (typeof value === "bigint") {
@@ -200,6 +186,5 @@ export default {
   logRequest,
   logResponse,
   formatErrorResponse,
-  formatWalletResponse,
   safeStringify,
 };

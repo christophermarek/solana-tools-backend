@@ -2,7 +2,14 @@ import { getClient } from "../client.ts";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import * as logging from "../../utils/logging.ts";
-import type { BindValue, WalletStats } from "../types.ts";
+import type { BindValue } from "../types.ts";
+export interface WalletStats {
+  total_wallets: number;
+  active_wallets: number;
+  inactive_wallets: number;
+  total_sol_balance: string;
+  total_wsol_balance: string;
+}
 
 export enum BalanceStatus {
   FRESH = "FRESH",

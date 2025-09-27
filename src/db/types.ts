@@ -27,14 +27,6 @@ export interface SearchOptions {
   includeInactive?: boolean;
 }
 
-export interface WalletStats {
-  total_wallets: number;
-  active_wallets: number;
-  inactive_wallets: number;
-  total_sol_balance: string;
-  total_wsol_balance: string;
-}
-
 export interface TransactionListOptions extends PaginationOptions {
   status?: string;
   tokenType?: string;

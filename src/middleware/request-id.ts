@@ -1,11 +1,8 @@
-import { Context, Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-
-interface AppState {
-  requestId: string;
-}
+import { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import { AppContext, AppState } from "./_context.ts";
 
 export function createRequestIdMiddleware(): Middleware<AppState> {
-  return async (ctx: Context<AppState>, next: Next) => {
+  return async (ctx: AppContext, next: Next) => {
     if (!ctx.state) {
       ctx.state = {} as AppState;
     }

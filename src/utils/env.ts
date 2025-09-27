@@ -32,6 +32,8 @@ const envSchema = z.object({
   ),
 
   MAX_CONCURRENT_BOTS: z.coerce.number().positive().min(1),
+
+  CLIENT_API_KEY: z.string().min(1, "Client API key is required"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -53,6 +55,7 @@ export async function loadEnv(envFile?: string): Promise<Env> {
       DB_PATH: Deno.env.get("DB_PATH"),
       TEST_WALLET_PRIVATE_KEY: Deno.env.get("TEST_WALLET_PRIVATE_KEY"),
       MAX_CONCURRENT_BOTS: Deno.env.get("MAX_CONCURRENT_BOTS"),
+      CLIENT_API_KEY: Deno.env.get("CLIENT_API_KEY"),
     });
 
     config = env;

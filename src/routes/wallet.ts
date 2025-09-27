@@ -1,5 +1,6 @@
 import { Router } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { validateRequest } from "../middleware/validate.ts";
+import { createAuthenticateTelegramUserMiddleware } from "../middleware/authenticate-telegram-user.ts";
 import {
   bulkEditWalletsSchema,
   createWalletsSchema,
@@ -20,6 +21,8 @@ import {
 const router = new Router({
   prefix: "/api/v1/wallets",
 });
+
+router.use(createAuthenticateTelegramUserMiddleware());
 
 router.get("/", listWallets);
 
