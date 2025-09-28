@@ -3,7 +3,7 @@ import walletService from "../../services/wallet/_index.ts";
 import {
   RefreshWalletBalancesPayload,
   RefreshWalletBalancesResponse,
-} from "./dto.ts";
+} from "./_dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {

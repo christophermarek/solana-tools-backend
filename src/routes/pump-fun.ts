@@ -1,17 +1,17 @@
 import { Router } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { validateRequest } from "../middleware/validate.ts";
 import {
-  createAndBuySchema,
   buyTokenSchema,
-  sellTokenSchema,
+  createAndBuySchema,
   getTokenBalanceSchema,
-} from "../schemas/pump-fun.ts";
+  sellTokenSchema,
+} from "../controllers/pump-fun/_dto.ts";
 
 import {
-  createAndBuyToken,
   buyToken,
-  sellToken,
+  createAndBuyToken,
   getTokenBalance,
+  sellToken,
 } from "../controllers/pump-fun/index.ts";
 
 const router = new Router({

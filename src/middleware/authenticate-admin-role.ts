@@ -1,11 +1,12 @@
 import { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import { getConfig } from "../utils/env.ts";
 import * as logging from "../utils/logging.ts";
 import { AppContext, AppState, getContext } from "./_context.ts";
 import { ResponseUtil } from "../routes/response.ts";
 import { MiddlewareError, MiddlewareErrorType } from "./error-handler.ts";
 
-export function createAuthenticateApiClientMiddleware(): Middleware<AppState> {
+export function createAuthenticateAdminRoleMiddleware(): Middleware<
+  AppState
+> {
   return async (ctx: AppContext, next: Next) => {
     const [contextData, contextError] = getContext(ctx);
 
@@ -15,27 +16,26 @@ export function createAuthenticateApiClientMiddleware(): Middleware<AppState> {
     }
 
     const [requestId] = contextData;
-    const authHeader = ctx.request.headers.get("authorization");
-    if (!authHeader) {
+
+    if (!ctx.state.telegramUser) {
       const error = new MiddlewareError(
-        MiddlewareErrorType.MISSING_AUTHORIZATION_HEADER,
+        MiddlewareErrorType.USER_NOT_AUTHENTICATED,
         401,
       );
       logging.error(requestId, error.message, error);
       return ResponseUtil.serverError(ctx, error);
     }
 
-    const config = getConfig();
-    console.log("config.CLIENT_API_KEY", config.CLIENT_API_KEY);
-    if (authHeader !== config.CLIENT_API_KEY) {
+    if (ctx.state.telegramUser.role_id !== "admin") {
       const error = new MiddlewareError(
-        MiddlewareErrorType.INVALID_API_KEY,
-        401,
+        MiddlewareErrorType.ADMIN_ROLE_REQUIRED,
+        403,
       );
       logging.error(requestId, error.message, error);
       return ResponseUtil.serverError(ctx, error);
     }
 
+    logging.info(requestId, "Admin role authenticated");
     await next();
   };
 }

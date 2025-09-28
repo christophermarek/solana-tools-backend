@@ -1,4 +1,4 @@
-import { AvailableBot } from "../../schemas/bot.ts";
+import { AvailableBot } from "../../controllers/bot/_dto.ts";
 import { getRegisteredBots } from "./bot-executor.ts";
 
 const getVolumeBot1ParameterSchema = (): Record<string, string> => {

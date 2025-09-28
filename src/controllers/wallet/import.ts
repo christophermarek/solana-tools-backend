@@ -1,6 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import { ImportWalletPayload, ImportWalletResponse } from "./dto.ts";
+import { ImportWalletPayload, ImportWalletResponse } from "./_dto.ts";
 import { mapWalletFromDb } from "../../services/wallet/_utils.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";

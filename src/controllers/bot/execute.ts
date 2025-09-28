@@ -1,7 +1,7 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import { ExecuteBotPayload } from "../../schemas/bot.ts";
+import { ExecuteBotPayload } from "./_dto.ts";
 import { BotType } from "../../services/bot/_types.ts";
 import * as botExecuteService from "../../services/bot/execute.ts";
 

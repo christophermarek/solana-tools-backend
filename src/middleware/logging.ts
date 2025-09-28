@@ -11,56 +11,6 @@ interface AppState extends State {
   parsedBody?: unknown;
 }
 
-function colorize(text: string, color: string): string {
-  const colors: Record<string, string> = {
-    reset: "\x1b[0m",
-    red: "\x1b[31m",
-    green: "\x1b[32m",
-    blue: "\x1b[34m",
-    cyan: "\x1b[36m",
-    magenta: "\x1b[35m",
-    yellow: "\x1b[33m",
-    brightBlue: "\x1b[94m",
-    brightRed: "\x1b[91m",
-    brightGreen: "\x1b[92m",
-    bold: "\x1b[1m",
-  };
-
-  return `${colors[color] || ""}${text}${colors.reset}`;
-}
-
-function getMethodColor(method: string): string {
-  switch (method.toUpperCase()) {
-    case "GET":
-      return "green";
-    case "POST":
-      return "blue";
-    case "PUT":
-      return "yellow";
-    case "DELETE":
-      return "red";
-    case "PATCH":
-      return "magenta";
-    default:
-      return "cyan";
-  }
-}
-
-function getStatusColor(status: number): string {
-  if (status >= 500) return "brightRed";
-  if (status >= 400) return "red";
-  if (status >= 300) return "yellow";
-  if (status >= 200) return "green";
-  return "cyan";
-}
-
-function getResponseTimeColor(ms: number): string {
-  if (ms >= 1000) return "red";
-  if (ms >= 500) return "yellow";
-  if (ms >= 100) return "cyan";
-  return "green";
-}
-
 function formatLog(options: {
   requestId: string;
   method: string;
@@ -80,14 +30,23 @@ function formatLog(options: {
     }
   }
 
-  const requestIdStr = colorize(`[${requestId}]`, "brightBlue");
-  const methodStr = colorize(method.padEnd(7), getMethodColor(method));
+  const requestIdStr = logging.colorize(`[${requestId}]`, "brightBlue");
+  const methodStr = logging.colorize(
+    method.padEnd(7),
+    logging.getMethodColor(method),
+  );
 
   if (phase === "request") {
     return `${requestIdStr} 🔹 ${methodStr} ${url}`;
   } else if (status !== undefined && timeMs !== undefined) {
-    const statusStr = colorize(`${status}`, getStatusColor(status));
-    const timeStr = colorize(`${timeMs}ms`, getResponseTimeColor(timeMs));
+    const statusStr = logging.colorize(
+      `${status}`,
+      logging.getStatusColor(status),
+    );
+    const timeStr = logging.colorize(
+      `${timeMs}ms`,
+      logging.getResponseTimeColor(timeMs),
+    );
     return `${requestIdStr} ✅ ${methodStr} ${url} ${statusStr} - ${timeStr}`;
   }
 
@@ -167,7 +126,7 @@ export function createDetailedLogger(
           const headers = ctx.request.headers;
           if (logHeaders) {
             const requestIdStr = useColors
-              ? colorize(`[${requestId}]`, "brightBlue")
+              ? logging.colorize(`[${requestId}]`, "brightBlue")
               : `[${requestId}]`;
             console.log(
               `${requestIdStr} 🔹 Headers:`,
@@ -176,7 +135,7 @@ export function createDetailedLogger(
           }
 
           const requestIdStr = useColors
-            ? colorize(`[${requestId}]`, "brightBlue")
+            ? logging.colorize(`[${requestId}]`, "brightBlue")
             : `[${requestId}]`;
           console.log(
             `${requestIdStr} 🔹 Request body: ${
@@ -205,7 +164,7 @@ export function createDetailedLogger(
 
       if (logResponseBody && ctx.response.body) {
         const requestIdStr = useColors
-          ? colorize(`[${requestId}]`, "brightBlue")
+          ? logging.colorize(`[${requestId}]`, "brightBlue")
           : `[${requestId}]`;
         console.log(
           `${requestIdStr} ✅ Response body: ${
@@ -216,7 +175,7 @@ export function createDetailedLogger(
     } catch (error) {
       const ms = Date.now() - start;
       const requestIdStr = useColors
-        ? colorize(`[${requestId}]`, "brightBlue")
+        ? logging.colorize(`[${requestId}]`, "brightBlue")
         : `[${requestId}]`;
       console.error(
         `${requestIdStr} ❌ Error processing ${method} ${url} (${ms}ms)`,

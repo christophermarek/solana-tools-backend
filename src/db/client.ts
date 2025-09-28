@@ -3,7 +3,8 @@ import { getConfig } from "../utils/env.ts";
 import * as logging from "../utils/logging.ts";
 import { ensureDir } from "std/fs/mod.ts";
 import { migrate } from "./migrate.ts";
-import type { DatabaseClient } from "./types.ts";
+
+export type DatabaseClient = Database;
 
 let client: DatabaseClient | null = null;
 

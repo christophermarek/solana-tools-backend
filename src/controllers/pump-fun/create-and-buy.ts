@@ -1,6 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { createAndBuy } from "../../services/pump-fun/create-and-buy.ts";
-import { CreateAndBuyPayload } from "../../schemas/pump-fun.ts";
+import { CreateAndBuyPayload } from "./_dto.ts";
 import logging, { getRequestId } from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";

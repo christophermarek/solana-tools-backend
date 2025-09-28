@@ -1,6 +1,6 @@
 import { Router } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { validateRequest } from "../middleware/validate.ts";
-import { executeBotSchema } from "../schemas/bot.ts";
+import { executeBotSchema } from "../controllers/bot/_dto.ts";
 import {
   executeBot,
   getBotExecutionStatus,

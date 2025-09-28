@@ -4,6 +4,7 @@ import * as logging from "../../utils/logging.ts";
 export interface DbUser {
   id: string;
   telegram_id: string;
+  role_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +31,7 @@ export async function getUser(
 
 export async function createUser(
   telegramId: string,
+  roleId: string = "user",
   requestId = "system",
 ): Promise<DbUser> {
   const client = getClient();
@@ -38,17 +40,21 @@ export async function createUser(
     const stmt = client.prepare(`
       INSERT INTO users (
         id,
-        telegram_id
-      ) VALUES (?, ?)
+        telegram_id,
+        role_id
+      ) VALUES (?, ?, ?)
     `);
 
-    stmt.run(id, telegramId);
+    stmt.run(id, telegramId, roleId);
 
     const newUser = await client.prepare(`
       SELECT * FROM users WHERE id = ?
     `).get(id) as DbUser;
 
-    logging.info(requestId, `Created user with telegram_id ${telegramId}`);
+    logging.info(
+      requestId,
+      `Created user with telegram_id ${telegramId} and role_id ${roleId}`,
+    );
     return newUser;
   } catch (error) {
     logging.error(
@@ -68,7 +74,7 @@ export async function getUserOrCreate(
   if (existingUser) {
     return existingUser;
   }
-  return await createUser(telegramId, requestId);
+  return await createUser(telegramId, "user", requestId);
 }
 
 export default {

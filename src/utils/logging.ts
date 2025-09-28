@@ -1,5 +1,5 @@
 import { AppContext } from "../middleware/_context.ts";
-function colorize(text: string, color: string): string {
+export function colorize(text: string, color: string): string {
   const colors: Record<string, string> = {
     reset: "\x1b[0m",
     red: "\x1b[31m",
@@ -17,7 +17,7 @@ function colorize(text: string, color: string): string {
   return `${colors[color] || ""}${text}${colors.reset}`;
 }
 
-function getMethodColor(method: string): string {
+export function getMethodColor(method: string): string {
   switch (method.toUpperCase()) {
     case "GET":
       return "green";
@@ -34,7 +34,7 @@ function getMethodColor(method: string): string {
   }
 }
 
-function getStatusColor(status: number): string {
+export function getStatusColor(status: number): string {
   if (status >= 500) return "brightRed";
   if (status >= 400) return "red";
   if (status >= 300) return "yellow";
@@ -42,14 +42,14 @@ function getStatusColor(status: number): string {
   return "cyan";
 }
 
-function getResponseTimeColor(ms: number): string {
+export function getResponseTimeColor(ms: number): string {
   if (ms >= 1000) return "red";
   if (ms >= 500) return "yellow";
   if (ms >= 100) return "cyan";
   return "green";
 }
 
-function truncateObject(obj: unknown, maxLength = 500): string {
+export function truncateObject(obj: unknown, maxLength = 500): string {
   if (obj === null || obj === undefined) return String(obj);
 
   try {
@@ -167,7 +167,7 @@ export function formatErrorResponse(message: string, err: unknown) {
   };
 }
 
-function safeStringify(obj: unknown): string {
+export function safeStringify(obj: unknown): string {
   return JSON.stringify(obj, (_key, value) => {
     if (typeof value === "bigint") {
       return value.toString();
