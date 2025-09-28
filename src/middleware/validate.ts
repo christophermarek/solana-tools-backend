@@ -1,5 +1,6 @@
 import { Next, RouterContext } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { z, ZodError } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { ResponseUtil } from "../routes/response.ts";
 
 interface ValidationOptions {
   bodySchema?: z.ZodType<unknown, z.ZodTypeDef, unknown>;
@@ -34,14 +35,13 @@ export function validateRequest(options: ValidationOptions) {
 
       await next();
     } catch (error: unknown) {
-      ctx.response.status = 400;
-      ctx.response.body = {
-        success: false,
-        message: "Validation failed",
-        errors: error instanceof ZodError ? error.errors : [{
+      ResponseUtil.badRequest(
+        ctx,
+        "Validation failed",
+        error instanceof ZodError ? error.errors : [{
           message: error instanceof Error ? error.message : "Unknown error",
         }],
-      };
+      );
     }
   };
 }

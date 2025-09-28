@@ -2,13 +2,6 @@ import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 import { getUserOrCreate } from "./users.ts";
 
-export interface DbWhitelistedUser {
-  id: string;
-  telegram_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export async function getWhitelist(
   requestId = "system",
 ): Promise<DbWhitelistedUser[]> {

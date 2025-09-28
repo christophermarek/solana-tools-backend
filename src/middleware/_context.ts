@@ -4,7 +4,14 @@ import { DbUser } from "../db/repositories/users.ts";
 export interface AppState {
   requestId: string;
   telegramUser?: DbUser;
+  bodyData?: unknown;
+  paramsData?: unknown;
+  queryData?: unknown;
 }
+
+export type AppStateWithBody<T = unknown> = AppState & {
+  bodyData: T;
+};
 
 export enum ContextErrorType {
   MISSING_REQUEST_ID = "MISSING_REQUEST_ID",
@@ -36,10 +43,10 @@ function getMessage(type: ContextErrorType): string {
 }
 
 export type AppContext = Context<AppState>;
-export type AppRouterContext = RouterContext<
+export type AppRouterContext<T = unknown> = RouterContext<
   string,
   Record<string, string>,
-  AppState
+  AppStateWithBody<T>
 >;
 
 export function getContext(

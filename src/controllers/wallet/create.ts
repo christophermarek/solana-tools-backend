@@ -52,13 +52,13 @@ export const createWallets: RouterMiddleware<
         requestId,
         `Created ${result.wallets.length}/${count} wallets with ${result.errors.length} errors`,
       );
-      ResponseUtil.success(ctx, responseData, 206);
+      ResponseUtil.success<CreateWalletsResponse>(ctx, responseData, 206);
     } else {
       logging.info(
         requestId,
         `Successfully created ${result.wallets.length} wallets`,
       );
-      ResponseUtil.created(ctx, responseData);
+      ResponseUtil.created<CreateWalletsResponse>(ctx, responseData);
     }
     logging.debug(requestId, "Response body", ctx.response.body);
   } catch (error) {

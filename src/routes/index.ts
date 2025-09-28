@@ -3,6 +3,7 @@ import { walletRouter } from "./wallet.ts";
 import { healthRouter } from "./health.ts";
 import { pumpFunRouter } from "./pump-fun.ts";
 import { botRouter } from "./bot.ts";
+import { adminRouter } from "./whitelist.ts";
 import * as logging from "../utils/logging.ts";
 import { ResponseUtil } from "./response.ts";
 
@@ -33,6 +34,10 @@ export function registerRoutes(app: Application): void {
   logging.info("system", "Registering bot routes...");
   app.use(botRouter.routes());
   app.use(botRouter.allowedMethods());
+
+  logging.info("system", "Registering admin routes...");
+  app.use(adminRouter.routes());
+  app.use(adminRouter.allowedMethods());
 
   logging.info("system", "Registering not found handler...");
   app.use(notFoundHandler);
