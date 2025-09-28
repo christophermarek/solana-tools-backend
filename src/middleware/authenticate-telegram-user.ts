@@ -2,22 +2,27 @@ import { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as logging from "../utils/logging.ts";
 import { getUserOrCreate } from "../db/repositories/users.ts";
 import { isTelegramUserWhitelisted } from "../db/repositories/whitelist.ts";
-import { AppContext, AppState, getContext } from "./_context.ts";
+import { AppContext, AppState } from "./_context.ts";
 import { ResponseUtil } from "../routes/response.ts";
 import { MiddlewareError, MiddlewareErrorType } from "./error-handler.ts";
 
+const TAG = "authenticate-telegram-user";
 export function createAuthenticateTelegramUserMiddleware(): Middleware<
   AppState
 > {
   return async (ctx: AppContext, next: Next) => {
-    const [contextData, contextError] = getContext(ctx);
+    logging.info(TAG, "Authenticating telegram user");
 
-    if (contextError) {
-      logging.error("system", contextError.message, contextError);
-      return ResponseUtil.serverError(ctx, contextError);
+    if (!ctx.state?.requestId) {
+      logging.error(
+        TAG,
+        "Missing request ID in telegram user middleware",
+        new Error("Missing request ID"),
+      );
+      return ResponseUtil.serverError(ctx, new Error("Missing request ID"));
     }
 
-    const [requestId] = contextData;
+    const requestId = ctx.state.requestId;
 
     const telegramId = ctx.request.headers.get("x-telegram-id");
     if (!telegramId) {
