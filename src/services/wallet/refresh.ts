@@ -36,12 +36,23 @@ export async function refreshWalletBalances(
           continue;
         }
 
-        const balance = await solanaService.getBalanceByPublicKey(
-          dbKeypair.public_key,
-          requestId ?? TAG,
-        );
+        const [balanceResult, balanceError] = await solanaService
+          .getBalanceByPublicKey({
+            publicKey: dbKeypair.public_key,
+            requestId: requestId ?? TAG,
+          });
 
-        if (balance) {
+        if (balanceError || !balanceResult?.balance) {
+          results.push({
+            id: walletId,
+            publicKey: dbKeypair.public_key,
+            label: dbKeypair.label,
+            success: false,
+            error: balanceError || "Failed to fetch balance",
+          });
+          failed++;
+        } else {
+          const balance = balanceResult.balance;
           results.push({
             id: walletId,
             publicKey: dbKeypair.public_key,
@@ -56,15 +67,6 @@ export async function refreshWalletBalances(
             },
           });
           successful++;
-        } else {
-          results.push({
-            id: walletId,
-            publicKey: dbKeypair.public_key,
-            label: dbKeypair.label,
-            success: false,
-            error: "Failed to fetch balance",
-          });
-          failed++;
         }
       } catch (error) {
         const errorMessage = error instanceof Error

@@ -1,4 +1,9 @@
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import type {
+  Wallet,
+  WalletWithBalance,
+} from "../../services/wallet/_types.ts";
+import type { WalletErrors } from "../../services/wallet/_errors.ts";
 
 // ===== Wallet Management Schemas =====
 
@@ -68,3 +73,89 @@ export const refreshWalletBalancesSchema = z.object({
 export type RefreshWalletBalancesPayload = z.infer<
   typeof refreshWalletBalancesSchema
 >;
+
+// ===== Response DTOs =====
+
+/**
+ * Response for creating wallets endpoint
+ */
+export interface CreateWalletsResponse {
+  wallets: WalletWithBalance[];
+  meta: {
+    requested: number;
+    created: number;
+    errorCount: number;
+    errors: Array<{ index: number; error: WalletErrors }>;
+  };
+}
+
+/**
+ * Response for importing a wallet endpoint
+ */
+export interface ImportWalletResponse {
+  wallet: Wallet;
+}
+
+/**
+ * Response for getting a single wallet endpoint
+ */
+export interface GetWalletResponse {
+  wallet: Wallet;
+}
+
+/**
+ * Response for listing wallets endpoint
+ */
+export interface ListWalletsResponse {
+  wallets: Wallet[];
+  meta: {
+    totalWallets: number;
+    activeWallets: number;
+    inactiveWallets: number;
+    walletsWithNullBalance: number;
+    refreshed: boolean;
+    activeOnly: boolean;
+  };
+}
+
+/**
+ * Response for bulk editing wallets endpoint
+ */
+export interface BulkEditWalletsResponse {
+  results: {
+    total: number;
+    successful: number;
+    failed: number;
+    successfulWallets: Array<{
+      id: number;
+      publicKey: string;
+      wallet: Wallet;
+    }>;
+    failedWallets: Array<{ id: number; error: WalletErrors }>;
+  };
+}
+
+/**
+ * Response for refreshing wallet balances endpoint
+ */
+export interface RefreshWalletBalancesResponse {
+  meta: {
+    refreshed: number;
+    failed: number;
+    total: number;
+  };
+  wallets: Array<{
+    id: number;
+    publicKey: string;
+    label?: string;
+    success: boolean;
+    error?: string;
+    balance?: {
+      solBalance: number;
+      wsolBalance: number;
+      totalBalance: number;
+      lastBalanceUpdate: Date;
+      balanceStatus: string;
+    };
+  }>;
+}

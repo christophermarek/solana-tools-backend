@@ -1,5 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import walletService from "../../services/wallet/_index.ts";
+import { ListWalletsResponse } from "./dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
@@ -47,13 +48,14 @@ export const listWallets: RouterMiddleware<
       return;
     }
 
-    ResponseUtil.success(ctx, {
+    const responseData: ListWalletsResponse = {
       wallets: result.wallets,
       meta: {
         ...result.meta,
         activeOnly,
       },
-    });
+    };
+    ResponseUtil.success(ctx, responseData);
 
     logging.debug(requestId, "Response body", ctx.response.body);
   } catch (error) {

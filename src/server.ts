@@ -1,6 +1,6 @@
 import { Application } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
-import { loadEnv } from "./utils/env.ts";
+import { getConfig, loadEnv } from "./utils/env.ts";
 import { initializeDb } from "./db/client.ts";
 import { registerRoutes } from "./routes/index.ts";
 import * as solanaService from "./services/solana/_index.ts";
@@ -35,6 +35,7 @@ async function initialize() {
   logging.info("system", "Starting application initialization...");
 
   await loadEnv(".env.devnet");
+  const config = getConfig();
   await initializeDb();
 
   await solanaService.init();
@@ -47,7 +48,7 @@ async function initialize() {
     );
   }
 
-  const port = 8000;
+  const port = config.PORT;
   logging.info("system", `Server running on http://localhost:${port}`);
 
   await app.listen({ port });

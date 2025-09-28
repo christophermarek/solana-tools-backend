@@ -1,6 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import walletService from "../../services/wallet/_index.ts";
-import { BulkEditWalletsPayload } from "../../schemas/wallet.ts";
+import { BulkEditWalletsPayload, BulkEditWalletsResponse } from "./dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
@@ -52,7 +52,7 @@ export const bulkEditWallets: RouterMiddleware<
       `Bulk edit completed. Success: ${result.successful.length}, Failed: ${result.failed.length}`,
     );
 
-    ResponseUtil.success(ctx, {
+    const responseData: BulkEditWalletsResponse = {
       results: {
         total: walletIds.length,
         successful: result.successful.length,
@@ -60,7 +60,8 @@ export const bulkEditWallets: RouterMiddleware<
         successfulWallets: result.successful,
         failedWallets: result.failed,
       },
-    });
+    };
+    ResponseUtil.success(ctx, responseData);
 
     logging.debug(requestId, "Bulk edit response", {
       successCount: result.successful.length,

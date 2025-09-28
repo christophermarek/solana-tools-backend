@@ -1,6 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import { ImportWalletPayload } from "../../schemas/wallet.ts";
+import { ImportWalletPayload, ImportWalletResponse } from "./dto.ts";
 import { mapWalletFromDb } from "../../services/wallet/_utils.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
@@ -50,7 +50,8 @@ export const importWallet: RouterMiddleware<
       `Successfully imported wallet: ${wallet.publicKey}`,
     );
 
-    ResponseUtil.created(ctx, { wallet });
+    const responseData: ImportWalletResponse = { wallet };
+    ResponseUtil.created(ctx, responseData);
 
     logging.debug(requestId, "Response body", ctx.response.body);
   } catch (error) {

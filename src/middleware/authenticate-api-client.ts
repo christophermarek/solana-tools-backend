@@ -8,23 +8,26 @@ export function createAuthenticateApiClientMiddleware(): Middleware<AppState> {
     const requestId = logging.getRequestId(ctx);
 
     const authHeader = ctx.request.headers.get("authorization");
+    console.log("authHeader", authHeader);
     if (!authHeader) {
       logging.warn(requestId, "Missing Authorization header");
       ctx.response.status = 401;
       ctx.response.body = {
         success: false,
-        message: "Missing Authorization header",
+        message: "UNAUTHORIZED",
       };
       return;
     }
 
     const config = getConfig();
+    console.log("config.CLIENT_API_KEY", config.CLIENT_API_KEY);
     if (authHeader !== config.CLIENT_API_KEY) {
+      console.log("Invalid API key provided");
       logging.warn(requestId, "Invalid API key provided");
       ctx.response.status = 401;
       ctx.response.body = {
         success: false,
-        message: "Invalid API key",
+        message: "UNAUTHORIZED",
       };
       return;
     }

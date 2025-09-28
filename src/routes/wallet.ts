@@ -7,7 +7,7 @@ import {
   importWalletSchema,
   refreshWalletBalancesSchema,
   walletParamSchema,
-} from "../schemas/wallet.ts";
+} from "../controllers/wallet/dto.ts";
 
 import {
   bulkEditWallets,

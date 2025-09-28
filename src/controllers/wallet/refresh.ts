@@ -1,6 +1,9 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import walletService from "../../services/wallet/_index.ts";
-import { RefreshWalletBalancesPayload } from "../../schemas/wallet.ts";
+import {
+  RefreshWalletBalancesPayload,
+  RefreshWalletBalancesResponse,
+} from "./dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
@@ -56,14 +59,15 @@ export const refreshWalletBalance: RouterMiddleware<
       `Successfully refreshed ${result.successful} wallet balances, ${result.failed} failed`,
     );
 
-    ResponseUtil.success(ctx, {
+    const responseData: RefreshWalletBalancesResponse = {
       meta: {
         refreshed: result.successful,
         failed: result.failed,
         total: result.successful + result.failed,
       },
       wallets: result.wallets,
-    });
+    };
+    ResponseUtil.success(ctx, responseData);
 
     logging.debug(
       requestId,

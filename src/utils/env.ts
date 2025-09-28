@@ -16,6 +16,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["devnet", "testnet", "mainnet"]).default(
     "devnet",
   ),
+  PORT: z.coerce.number().min(1, "Port is required"),
 
   RPC_URL: z.string().min(1, "RPC URL is required"),
   RPC_TIMEOUT_MS: z.coerce.number().positive().default(30000),
@@ -48,6 +49,7 @@ export async function loadEnv(envFile?: string): Promise<Env> {
 
     const env = envSchema.parse({
       NODE_ENV: Deno.env.get("NODE_ENV"),
+      PORT: Deno.env.get("PORT"),
       RPC_URL: Deno.env.get("RPC_URL"),
       RPC_TIMEOUT_MS: Deno.env.get("RPC_TIMEOUT_MS"),
       HELIUS_RPC_URL: Deno.env.get("HELIUS_RPC_URL"),

@@ -1,6 +1,6 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as keypairRepo from "../../db/repositories/keypairs.ts";
-import { WalletParamPayload } from "../../schemas/wallet.ts";
+import { GetWalletResponse, WalletParamPayload } from "./dto.ts";
 import logging from "../../utils/logging.ts";
 import { mapWalletFromDb } from "../../services/wallet/_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
@@ -46,7 +46,8 @@ export const getWallet: RouterMiddleware<
     const wallet = mapWalletFromDb(dbKeypair);
     logging.info(requestId, `Found wallet: ${publicKey} (ID: ${wallet.id})`);
 
-    ResponseUtil.success(ctx, { wallet });
+    const responseData: GetWalletResponse = { wallet };
+    ResponseUtil.success(ctx, responseData);
 
     logging.debug(requestId, "Response body", ctx.response.body);
   } catch (error) {
