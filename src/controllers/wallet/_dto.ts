@@ -6,7 +6,7 @@ import type {
 import type { WalletErrors } from "../../services/wallet/_errors.ts";
 
 export const createWalletsRequestDto = z.object({
-  count: z.number().int().positive().default(1),
+  count: z.number().int().min(1).max(10),
   label: z.string().optional(),
 });
 

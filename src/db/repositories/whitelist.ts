@@ -1,15 +1,15 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
-import { getUserOrCreate } from "./users.ts";
+import { DbUser, getUserOrCreate } from "./users.ts";
 
 export async function getWhitelist(
   requestId = "system",
-): Promise<DbWhitelistedUser[]> {
+): Promise<DbUser[]> {
   const client = getClient();
   try {
     const result = await client.prepare(`
       SELECT id, telegram_id, created_at, updated_at FROM whitelisted_telegram_users ORDER BY created_at DESC
-    `).all() as DbWhitelistedUser[];
+    `).all() as DbUser[];
 
     return result;
   } catch (error) {
@@ -73,7 +73,7 @@ export async function removeTelegramUserFromWhitelist(
 export async function addTelegramUserToWhitelist(
   telegramId: string,
   requestId = "system",
-): Promise<DbWhitelistedUser> {
+): Promise<DbUser> {
   const client = getClient();
   try {
     await getUserOrCreate(telegramId, requestId);
@@ -85,7 +85,7 @@ export async function addTelegramUserToWhitelist(
     if (isAlreadyWhitelisted) {
       const existingUser = await client.prepare(`
         SELECT * FROM whitelisted_telegram_users WHERE telegram_id = ?
-      `).get(telegramId) as DbWhitelistedUser;
+      `).get(telegramId) as DbUser;
       logging.info(
         requestId,
         `Telegram user ${telegramId} is already whitelisted`,
@@ -105,7 +105,7 @@ export async function addTelegramUserToWhitelist(
 
     const newWhitelistedUser = await client.prepare(`
       SELECT * FROM whitelisted_telegram_users WHERE id = ?
-    `).get(id) as DbWhitelistedUser;
+    `).get(id) as DbUser;
 
     logging.info(requestId, `Added telegram user ${telegramId} to whitelist`);
     return newWhitelistedUser;

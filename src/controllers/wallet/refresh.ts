@@ -24,7 +24,7 @@ export const refreshWalletBalance: RouterMiddleware<
     return;
   }
 
-  const [requestId, telegramUser] = contextData;
+  const [requestId, _telegramUser] = contextData;
 
   try {
     const { walletIds } = ctx.state.bodyData;
