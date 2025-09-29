@@ -5,15 +5,15 @@ import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
   AppRouterContext,
-  AppState,
+  AppStateWithBody,
   getContext,
 } from "../../middleware/_context.ts";
 
 export const createWallets: RouterMiddleware<
   string,
   Record<string, string>,
-  AppState
-> = async (ctx: AppRouterContext) => {
+  AppStateWithBody<CreateWalletsPayload>
+> = async (ctx: AppRouterContext<CreateWalletsPayload>) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {
@@ -28,9 +28,7 @@ export const createWallets: RouterMiddleware<
   );
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as CreateWalletsPayload;
-    const { count = 1, label } = body;
+    const { count = 1, label } = ctx.state.bodyData;
 
     const result = await walletService.createWallets(
       { count, label },

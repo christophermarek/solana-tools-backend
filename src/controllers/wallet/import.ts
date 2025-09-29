@@ -6,15 +6,15 @@ import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
   AppRouterContext,
-  AppState,
+  AppStateWithBody,
   getContext,
 } from "../../middleware/_context.ts";
 
 export const importWallet: RouterMiddleware<
   string,
   Record<string, string>,
-  AppState
-> = async (ctx: AppRouterContext) => {
+  AppStateWithBody<ImportWalletPayload>
+> = async (ctx: AppRouterContext<ImportWalletPayload>) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {
@@ -26,9 +26,7 @@ export const importWallet: RouterMiddleware<
   logging.info(requestId, "Importing existing wallet");
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as ImportWalletPayload;
-    const { secretKey, label } = body;
+    const { secretKey, label } = ctx.state.bodyData;
 
     const [dbKeypair, error] = await keypairRepo.importWallet(
       secretKey,

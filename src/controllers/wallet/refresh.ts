@@ -8,15 +8,15 @@ import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
   AppRouterContext,
-  AppState,
+  AppStateWithBody,
   getContext,
 } from "../../middleware/_context.ts";
 
 export const refreshWalletBalance: RouterMiddleware<
   string,
   Record<string, string>,
-  AppState
-> = async (ctx: AppRouterContext) => {
+  AppStateWithBody<RefreshWalletBalancesPayload>
+> = async (ctx: AppRouterContext<RefreshWalletBalancesPayload>) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {
@@ -27,9 +27,7 @@ export const refreshWalletBalance: RouterMiddleware<
   const [requestId, telegramUser] = contextData;
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as RefreshWalletBalancesPayload;
-    const { walletIds } = body;
+    const { walletIds } = ctx.state.bodyData;
 
     logging.info(
       requestId,

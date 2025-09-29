@@ -5,22 +5,14 @@ import type {
 } from "../../services/wallet/_types.ts";
 import type { WalletErrors } from "../../services/wallet/_errors.ts";
 
-// ===== Wallet Management Schemas =====
-
-/**
- * Schema for creating wallets
- */
-export const createWalletsSchema = z.object({
+export const createWalletsRequestDto = z.object({
   count: z.number().int().positive().default(1),
   label: z.string().optional(),
 });
 
-export type CreateWalletsPayload = z.infer<typeof createWalletsSchema>;
+export type CreateWalletsPayload = z.infer<typeof createWalletsRequestDto>;
 
-/**
- * Schema for importing existing wallets
- */
-export const importWalletSchema = z.object({
+export const importWalletRequestDto = z.object({
   secretKey: z.string()
     .min(87, "Invalid secret key format")
     .max(88, "Invalid secret key format")
@@ -28,12 +20,9 @@ export const importWalletSchema = z.object({
   label: z.string().optional(),
 });
 
-export type ImportWalletPayload = z.infer<typeof importWalletSchema>;
+export type ImportWalletPayload = z.infer<typeof importWalletRequestDto>;
 
-/**
- * Schema for wallet public key parameter
- */
-export const walletParamSchema = z.object({
+export const walletParamRequestDto = z.object({
   publicKey: z.string()
     .length(44, "Invalid public key format - must be exactly 44 characters")
     .regex(
@@ -42,12 +31,9 @@ export const walletParamSchema = z.object({
     ),
 });
 
-export type WalletParamPayload = z.infer<typeof walletParamSchema>;
+export type WalletParamPayload = z.infer<typeof walletParamRequestDto>;
 
-/**
- * Schema for bulk editing multiple wallets
- */
-export const bulkEditWalletsSchema = z.object({
+export const bulkEditWalletsRequestDto = z.object({
   walletIds: z.array(z.number().int().positive())
     .min(1, "At least one wallet ID is required")
     .max(50, "Maximum of 50 wallet IDs allowed at once"),
@@ -59,26 +45,18 @@ export const bulkEditWalletsSchema = z.object({
   }),
 });
 
-export type BulkEditWalletsPayload = z.infer<typeof bulkEditWalletsSchema>;
+export type BulkEditWalletsPayload = z.infer<typeof bulkEditWalletsRequestDto>;
 
-/**
- * Schema for refreshing wallet balances
- */
-export const refreshWalletBalancesSchema = z.object({
+export const refreshWalletBalancesRequestDto = z.object({
   walletIds: z.array(z.number().int().positive())
     .min(1, "At least one wallet ID is required")
     .max(100, "Maximum of 100 wallet IDs allowed at once"),
 });
 
 export type RefreshWalletBalancesPayload = z.infer<
-  typeof refreshWalletBalancesSchema
+  typeof refreshWalletBalancesRequestDto
 >;
 
-// ===== Response DTOs =====
-
-/**
- * Response for creating wallets endpoint
- */
 export interface CreateWalletsResponse {
   wallets: WalletWithBalance[];
   meta: {
@@ -89,16 +67,10 @@ export interface CreateWalletsResponse {
   };
 }
 
-/**
- * Response for importing a wallet endpoint
- */
 export interface ImportWalletResponse {
   wallet: Wallet;
 }
 
-/**
- * Response for getting a single wallet endpoint
- */
 export interface GetWalletResponse {
   wallet: Wallet;
 }
@@ -118,9 +90,6 @@ export interface ListWalletsResponse {
   };
 }
 
-/**
- * Response for bulk editing wallets endpoint
- */
 export interface BulkEditWalletsResponse {
   results: {
     total: number;
@@ -135,9 +104,6 @@ export interface BulkEditWalletsResponse {
   };
 }
 
-/**
- * Response for refreshing wallet balances endpoint
- */
 export interface RefreshWalletBalancesResponse {
   meta: {
     refreshed: number;

@@ -6,16 +6,16 @@ import { mapWalletFromDb } from "../../services/wallet/_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
-  AppRouterContext,
-  AppState,
+  AppRouterContextWithParams,
+  AppStateWithParams,
   getContext,
 } from "../../middleware/_context.ts";
 
 export const getWallet: RouterMiddleware<
   string,
   Record<string, string>,
-  AppState
-> = async (ctx: AppRouterContext) => {
+  AppStateWithParams<WalletParamPayload>
+> = async (ctx: AppRouterContextWithParams<WalletParamPayload>) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {
@@ -24,8 +24,7 @@ export const getWallet: RouterMiddleware<
   }
 
   const [requestId, _telegramUser] = contextData;
-  const params = ctx.params as WalletParamPayload;
-  const publicKey = params.publicKey;
+  const { publicKey } = ctx.state.paramsData;
 
   logging.info(requestId, `Getting wallet with public key: ${publicKey}`);
 

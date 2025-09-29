@@ -7,10 +7,15 @@ export interface AppState {
   bodyData?: unknown;
   paramsData?: unknown;
   queryData?: unknown;
+  parsedBody?: unknown;
 }
 
 export type AppStateWithBody<T = unknown> = AppState & {
   bodyData: T;
+};
+
+export type AppStateWithParams<T = unknown> = AppState & {
+  paramsData: T;
 };
 
 export enum ContextErrorType {
@@ -48,9 +53,14 @@ export type AppRouterContext<T = unknown> = RouterContext<
   Record<string, string>,
   AppStateWithBody<T>
 >;
+export type AppRouterContextWithParams<T = unknown> = RouterContext<
+  string,
+  Record<string, string>,
+  AppStateWithParams<T>
+>;
 
 export function getContext(
-  ctx: AppContext | AppRouterContext,
+  ctx: AppContext | AppRouterContext | AppRouterContextWithParams,
 ): [[string, DbUser], null] | [null, ContextError] {
   if (!ctx.state) {
     return [null, new ContextError(ContextErrorType.INVALID_STATE)];

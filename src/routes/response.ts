@@ -1,4 +1,5 @@
 import { Context, RouterContext } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import logging from "../utils/logging.ts";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -18,6 +19,7 @@ export class ResponseUtil {
       success: true,
       data,
     } as ApiResponse<T>;
+    logging.debug(ctx.state.requestId, "Response body", ctx.response.body);
   }
 
   static error(
@@ -32,6 +34,7 @@ export class ResponseUtil {
       message,
       ...(errors && { errors }),
     } as ApiResponse<never>;
+    logging.debug(ctx.state.requestId, "Response body", ctx.response.body);
   }
 
   static created<T>(

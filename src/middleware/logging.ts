@@ -2,14 +2,9 @@ import {
   Context,
   Middleware,
   Next,
-  State,
 } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as logging from "../utils/logging.ts";
-
-interface AppState extends State {
-  requestId: string;
-  parsedBody?: unknown;
-}
+import { AppState } from "./_context.ts";
 
 function formatLog(options: {
   requestId: string;
@@ -82,7 +77,7 @@ export interface DetailedLoggerOptions {
 }
 
 export function getRequestId(ctx: { state: { requestId?: string } }): string {
-  return logging.getRequestId(ctx);
+  return ctx.state.requestId || "unknown";
 }
 
 export function createDetailedLogger(
@@ -121,7 +116,7 @@ export function createDetailedLogger(
       if (logRequestBody && ["POST", "PUT", "PATCH"].includes(method)) {
         try {
           const bodyResult = await ctx.request.body().value;
-          ctx.state.parsedBody = bodyResult;
+          (ctx.state as AppState).parsedBody = bodyResult;
 
           const headers = ctx.request.headers;
           if (logHeaders) {

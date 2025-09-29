@@ -3,17 +3,13 @@ import walletService from "../../services/wallet/_index.ts";
 import { ListWalletsResponse } from "./_dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import {
-  AppRouterContext,
-  AppState,
-  getContext,
-} from "../../middleware/_context.ts";
+import { AppContext, AppState, getContext } from "../../middleware/_context.ts";
 
 export const listWallets: RouterMiddleware<
   string,
   Record<string, string>,
   AppState
-> = async (ctx: AppRouterContext) => {
+> = async (ctx: AppContext) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {

@@ -5,15 +5,15 @@ import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import {
   AppRouterContext,
-  AppState,
+  AppStateWithBody,
   getContext,
 } from "../../middleware/_context.ts";
 
 export const bulkEditWallets: RouterMiddleware<
   string,
   Record<string, string>,
-  AppState
-> = async (ctx: AppRouterContext) => {
+  AppStateWithBody<BulkEditWalletsPayload>
+> = async (ctx: AppRouterContext<BulkEditWalletsPayload>) => {
   const [contextData, contextError] = getContext(ctx);
 
   if (contextError) {
@@ -29,9 +29,7 @@ export const bulkEditWallets: RouterMiddleware<
   );
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as BulkEditWalletsPayload;
-    const { walletIds, updates } = body;
+    const { walletIds, updates } = ctx.state.bodyData;
 
     const [result, error] = await walletService.bulkEditWallets(
       { walletIds, updates },

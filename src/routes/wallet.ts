@@ -2,11 +2,11 @@ import { Router } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { validateRequest } from "../middleware/validate.ts";
 import { createAuthenticateTelegramUserMiddleware } from "../middleware/authenticate-telegram-user.ts";
 import {
-  bulkEditWalletsSchema,
-  createWalletsSchema,
-  importWalletSchema,
-  refreshWalletBalancesSchema,
-  walletParamSchema,
+  bulkEditWalletsRequestDto,
+  createWalletsRequestDto,
+  importWalletRequestDto,
+  refreshWalletBalancesRequestDto,
+  walletParamRequestDto,
 } from "../controllers/wallet/_dto.ts";
 
 import {
@@ -28,31 +28,31 @@ router.get("/", listWallets);
 
 router.post(
   "/",
-  validateRequest({ bodySchema: createWalletsSchema }),
+  validateRequest({ bodySchema: createWalletsRequestDto }),
   createWallets,
 );
 
 router.post(
   "/import",
-  validateRequest({ bodySchema: importWalletSchema }),
+  validateRequest({ bodySchema: importWalletRequestDto }),
   importWallet,
 );
 
 router.patch(
   "/",
-  validateRequest({ bodySchema: bulkEditWalletsSchema }),
+  validateRequest({ bodySchema: bulkEditWalletsRequestDto }),
   bulkEditWallets,
 );
 
 router.get(
   "/:publicKey",
-  validateRequest({ paramsSchema: walletParamSchema }),
+  validateRequest({ paramsSchema: walletParamRequestDto }),
   getWallet,
 );
 
 router.post(
   "/balance/refresh",
-  validateRequest({ bodySchema: refreshWalletBalancesSchema }),
+  validateRequest({ bodySchema: refreshWalletBalancesRequestDto }),
   refreshWalletBalance,
 );
 
