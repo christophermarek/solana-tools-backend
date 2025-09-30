@@ -57,7 +57,7 @@ export async function create(
     await stmt.run(
       keypair.publicKey.toString(),
       bs58.encode(keypair.secretKey),
-      label,
+      label ?? null,
       BalanceStatus.UNKNOWN,
     );
     const newKeypair = await client.prepare(`
@@ -351,7 +351,7 @@ export async function updateLabel(
       label = ?,
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(label, id);
+  `).run(label ?? null, id);
 
   const result = await client.prepare(`
     SELECT * FROM keypairs WHERE id = ?
@@ -448,7 +448,7 @@ export async function importWallet(
           updated_at = CURRENT_TIMESTAMP
           balance_status = 'UNKNOWN'
         WHERE public_key = ?
-      `).run(label, publicKey, BalanceStatus.UNKNOWN);
+      `).run(label ?? null, publicKey, BalanceStatus.UNKNOWN);
 
         const result = await client.prepare(`
         SELECT * FROM keypairs WHERE public_key = ?
@@ -470,7 +470,7 @@ export async function importWallet(
     await stmt.run(
       publicKey,
       secretKey,
-      label,
+      label ?? null,
       BalanceStatus.UNKNOWN,
     );
     const newWallet = await client.prepare(`

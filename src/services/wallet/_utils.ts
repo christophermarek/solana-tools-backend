@@ -36,7 +36,7 @@ export function mapWalletFromDb(dbKeypair: DbKeypair): Wallet {
   return {
     id: dbKeypair.id,
     publicKey: dbKeypair.public_key,
-    label: dbKeypair.label,
+    label: dbKeypair.label ?? undefined,
     isActive: Boolean(dbKeypair.is_active),
     createdAt: new Date(dbKeypair.created_at),
     solBalance: dbKeypair.sol_balance
@@ -63,7 +63,7 @@ export function mapWalletWithBalanceFromDb(
   return {
     id: dbKeypair.id,
     publicKey: dbKeypair.public_key,
-    label: dbKeypair.label,
+    label: dbKeypair.label ?? undefined,
     isActive: Boolean(dbKeypair.is_active),
     createdAt: new Date(dbKeypair.created_at),
     solBalance: balance.solBalance,
