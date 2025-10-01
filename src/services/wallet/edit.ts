@@ -10,7 +10,7 @@ export async function bulkEditWallets(
   params: BulkEditParams,
   requestId?: string | undefined,
 ): Promise<[BulkEditResult, null] | [null, WalletErrors]> {
-  const { walletIds, updates, delete: shouldDelete } = params;
+  const { walletIds, updates, delete: shouldDelete, ownerUserId } = params;
 
   const operation = shouldDelete ? "delete" : "edit";
 
@@ -33,7 +33,7 @@ export async function bulkEditWallets(
   for (const id of walletIds) {
     try {
       const wallet: DbKeypair | null = await keypairRepo
-        .findByIdIncludingInactive(id);
+        .findById(id, ownerUserId, requestId ?? TAG);
 
       if (!wallet) {
         logging.info(requestId ?? TAG, `Wallet with ID ${id} not found`);
@@ -46,7 +46,7 @@ export async function bulkEditWallets(
 
       if (shouldDelete) {
         logging.debug(requestId ?? TAG, `Deleting wallet ${id}`);
-        await keypairRepo.deleteById(id);
+        await keypairRepo.deleteById(id, ownerUserId, requestId ?? TAG);
         results.successful.push({
           id,
           publicKey: wallet.public_key,
@@ -57,10 +57,15 @@ export async function bulkEditWallets(
           requestId ?? TAG,
           `Updating label for wallet ${id} to "${updates.label}"`,
         );
-        await keypairRepo.updateLabel(id, updates.label);
+        await keypairRepo.updateLabel(
+          id,
+          updates.label,
+          ownerUserId,
+          requestId ?? TAG,
+        );
 
         const updatedWallet: DbKeypair | null = await keypairRepo
-          .findByIdIncludingInactive(id);
+          .findById(id, ownerUserId, requestId ?? TAG);
         if (!updatedWallet) {
           throw new Error(`Failed to retrieve updated wallet with ID ${id}`);
         }

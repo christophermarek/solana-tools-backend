@@ -107,48 +107,6 @@ export async function create(
   }
 }
 
-export async function findBySignature(
-  signature: string,
-  requestId = "system",
-): Promise<DbTransaction | null> {
-  const client = getClient();
-  try {
-    const result = await client.prepare(`
-      SELECT * FROM transactions WHERE signature = ?
-    `).get(signature) as DbTransaction | undefined;
-    return result || null;
-  } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to find transaction with signature ${signature}`,
-      error,
-    );
-    throw error;
-  }
-}
-
-export async function findByPublicKey(
-  senderPublicKey: string,
-  requestId = "system",
-): Promise<DbTransaction[]> {
-  const client = getClient();
-  try {
-    const result = await client.prepare(`
-      SELECT * FROM transactions 
-      WHERE sender_public_key = ? 
-      ORDER BY created_at DESC
-    `).all(senderPublicKey) as DbTransaction[];
-    return result;
-  } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to find transactions for public key ${senderPublicKey}`,
-      error,
-    );
-    throw error;
-  }
-}
-
 export async function update(
   id: number,
   params: UpdateTransactionParams,
@@ -234,90 +192,7 @@ export async function update(
   }
 }
 
-export async function updateBySignature(
-  signature: string,
-  params: UpdateTransactionParams,
-  requestId = "system",
-): Promise<DbTransaction> {
-  const client = getClient();
-  try {
-    const updates: string[] = [];
-    const values: BindValue[] = [];
-
-    if (params.status !== undefined) {
-      updates.push("status = ?");
-      values.push(params.status);
-    }
-
-    if (params.slot !== undefined) {
-      updates.push("slot = ?");
-      values.push(params.slot);
-    }
-
-    if (params.priority_fee_unit_limit !== undefined) {
-      updates.push("priority_fee_unit_limit = ?");
-      values.push(params.priority_fee_unit_limit);
-    }
-
-    if (params.priority_fee_unit_price_lamports !== undefined) {
-      updates.push("priority_fee_unit_price_lamports = ?");
-      values.push(params.priority_fee_unit_price_lamports);
-    }
-
-    if (params.slippage_bps !== undefined) {
-      updates.push("slippage_bps = ?");
-      values.push(params.slippage_bps);
-    }
-
-    if (params.confirmed_at !== undefined) {
-      updates.push("confirmed_at = ?");
-      values.push(params.confirmed_at.toISOString());
-    }
-
-    if (params.confirmation_slot !== undefined) {
-      updates.push("confirmation_slot = ?");
-      values.push(params.confirmation_slot);
-    }
-
-    if (params.commitment_level !== undefined) {
-      updates.push("commitment_level = ?");
-      values.push(params.commitment_level);
-    }
-
-    if (params.error_message !== undefined) {
-      updates.push("error_message = ?");
-      values.push(params.error_message);
-    }
-
-    updates.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(signature);
-
-    const sqlQuery = `
-      UPDATE transactions 
-      SET ${updates.join(", ")}
-      WHERE signature = ?
-    `;
-
-    await client.prepare(sqlQuery).run(...values);
-
-    const result = await client.prepare(`
-      SELECT * FROM transactions WHERE signature = ?
-    `).get(signature) as DbTransaction;
-    return result;
-  } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to update transaction with signature ${signature}`,
-      error,
-    );
-    throw error;
-  }
-}
-
 export default {
   create,
-  findBySignature,
-  findByPublicKey,
   update,
-  updateBySignature,
 };

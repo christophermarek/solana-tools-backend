@@ -1,22 +1,37 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { getSPLBalance } from "../../services/pump-fun/get-spl-balance.ts";
 import { GetTokenBalancePayload } from "./_dto.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";
 import { PublicKey } from "@solana/web3.js";
+import {
+  AppRouterContext,
+  AppStateWithBody,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const getTokenBalance: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
+export const getTokenBalance: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppStateWithBody<GetTokenBalancePayload>
+> = async (ctx: AppRouterContext<GetTokenBalancePayload>) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, telegramUser] = contextData;
   logging.info(requestId, "Getting token balance");
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as GetTokenBalancePayload;
-    const { walletId, mintPublicKey } = body;
+    const { walletId, mintPublicKey } = ctx.state.bodyData;
 
     const [validation, validationError] = await validateWalletAndGetKeypair(
       walletId,
+      telegramUser.id,
       requestId,
     );
     if (validationError) {

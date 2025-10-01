@@ -3,12 +3,13 @@ import * as keypairRepo from "../../db/repositories/keypairs.ts";
 import * as logging from "../../utils/logging.ts";
 import { WALLET_ERRORS, WalletErrors } from "./_errors.ts";
 import { TAG } from "./_constants.ts";
-import { RefreshBalancesResult } from "./_types.ts";
+import { RefreshBalancesParams, RefreshBalancesResult } from "./_types.ts";
 
 export async function refreshWalletBalances(
-  walletIds: number[],
+  params: RefreshBalancesParams,
   requestId?: string | undefined,
 ): Promise<[RefreshBalancesResult, null] | [null, WalletErrors]> {
+  const { walletIds, ownerUserId } = params;
   try {
     logging.info(
       requestId ?? TAG,
@@ -23,6 +24,7 @@ export async function refreshWalletBalances(
       try {
         const dbKeypair = await keypairRepo.findById(
           walletId,
+          ownerUserId,
           requestId ?? TAG,
         );
         if (!dbKeypair) {
@@ -39,6 +41,7 @@ export async function refreshWalletBalances(
         const [balanceResult, balanceError] = await solanaService
           .getBalanceByPublicKey({
             publicKey: dbKeypair.public_key,
+            ownerUserId,
             requestId: requestId ?? TAG,
           });
 

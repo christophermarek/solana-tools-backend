@@ -1,17 +1,32 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import { ExecuteBotPayload } from "./_dto.ts";
 import { BotType } from "../../services/bot/_types.ts";
 import * as botExecuteService from "../../services/bot/execute.ts";
+import {
+  AppRouterContext,
+  AppStateWithBody,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const executeBot: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
+export const executeBot: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppStateWithBody<ExecuteBotPayload>
+> = async (ctx: AppRouterContext<ExecuteBotPayload>) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, telegramUser] = contextData;
   logging.info(requestId, "Bot execution requested");
 
   try {
-    const body = ctx.state.bodyData as ExecuteBotPayload;
-    const { botType, parameters } = body;
+    const { botType, parameters } = ctx.state.bodyData;
 
     logging.info(requestId, "Executing bot", {
       botType,
@@ -25,6 +40,7 @@ export const executeBot: RouterMiddleware<string> = async (ctx) => {
     const [executionId, error] = await botExecuteService.startBotExecution(
       botType as BotType,
       parameters,
+      telegramUser.id,
       requestId,
     );
 

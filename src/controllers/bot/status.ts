@@ -1,10 +1,26 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import * as botExecuteService from "../../services/bot/execute.ts";
+import {
+  AppRouterContextWithParams,
+  AppStateWithParams,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const getBotExecutionStatus: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
+export const getBotExecutionStatus: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppStateWithParams<{ executionId: string }>
+> = async (ctx: AppRouterContextWithParams<{ executionId: string }>) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, _telegramUser] = contextData;
   const executionId = parseInt(ctx.params.executionId);
 
   if (isNaN(executionId)) {
@@ -60,64 +76,6 @@ export const getBotExecutionStatus: RouterMiddleware<string> = async (ctx) => {
     ResponseUtil.success(ctx, response);
   } catch (error) {
     logging.error(requestId, "Error getting bot execution status", error);
-    ResponseUtil.serverError(ctx, error);
-  }
-};
-
-export const listBotExecutions: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
-  const walletIdParam = ctx.request.url.searchParams.get("walletId");
-  const botIdParam = ctx.request.url.searchParams.get("botId");
-  const walletId = walletIdParam ? parseInt(walletIdParam) : undefined;
-  const botId = botIdParam ? parseInt(botIdParam) : undefined;
-
-  if (walletIdParam && isNaN(walletId!)) {
-    ResponseUtil.badRequest(ctx, "Invalid wallet ID");
-    return;
-  }
-
-  if (botIdParam && isNaN(botId!)) {
-    ResponseUtil.badRequest(ctx, "Invalid bot ID");
-    return;
-  }
-
-  logging.info(requestId, "Listing bot executions", { walletId, botId });
-
-  try {
-    const [executions, error] = await botExecuteService.listBotExecutions(
-      walletId,
-      botId,
-      requestId,
-    );
-
-    if (error) {
-      ResponseUtil.serverError(ctx, new Error(error));
-      return;
-    }
-
-    const response = executions!.map((execution) => ({
-      id: execution.id,
-      botType: execution.bot_type,
-      botParams: JSON.parse(execution.bot_params),
-      walletId: execution.wallet_id,
-      status: execution.status,
-      totalCycles: execution.total_cycles,
-      successfulCycles: execution.successful_cycles,
-      failedCycles: execution.failed_cycles,
-      executionTimeMs: execution.execution_time_ms,
-      createdAt: execution.created_at,
-      startedAt: execution.started_at,
-      completedAt: execution.completed_at,
-    }));
-
-    logging.info(requestId, "Retrieved bot executions", {
-      count: response.length,
-      walletId,
-    });
-
-    ResponseUtil.success(ctx, { executions: response });
-  } catch (error) {
-    logging.error(requestId, "Error listing bot executions", error);
     ResponseUtil.serverError(ctx, error);
   }
 };

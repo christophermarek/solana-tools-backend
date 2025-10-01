@@ -112,14 +112,6 @@ paths:
       operationId: listWallets
       tags:
         - Wallets
-      parameters:
-        - name: activeOnly
-          in: query
-          description: Filter to show only active wallets
-          required: false
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: List of wallets retrieved successfully
@@ -144,7 +136,6 @@ paths:
                     totalWallets: 1
                     walletsWithNullBalance: 0
                     refreshed: true
-                    activeOnly: false
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1111,7 +1102,6 @@ components:
         - inactiveWallets
         - walletsWithNullBalance
         - refreshed
-        - activeOnly
       properties:
         totalWallets:
           type: integer
@@ -1128,9 +1118,6 @@ components:
         refreshed:
           type: boolean
           description: Whether balances were refreshed
-        activeOnly:
-          type: boolean
-          description: Whether only active wallets were requested
 
     CreateWalletsResponse:
       allOf:

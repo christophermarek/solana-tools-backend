@@ -150,7 +150,7 @@ export async function getTotalSolBalance(
 export async function getBalanceByPublicKey(
   params: GetBalanceParams,
 ): Promise<[GetBalanceResult, null] | [null, SolanaErrors]> {
-  const { publicKey: publicKeyStr, requestId = TAG } = params;
+  const { publicKey: publicKeyStr, ownerUserId, requestId = TAG } = params;
 
   logging.info(requestId, `Getting balance for wallet: ${publicKeyStr}`);
 
@@ -164,7 +164,11 @@ export async function getBalanceByPublicKey(
       return [null, SOLANA_ERRORS.ERROR_INVALID_PUBLIC_KEY];
     }
 
-    const dbKeypair = await keypairRepo.findByPublicKey(publicKeyStr);
+    const dbKeypair = await keypairRepo.findByPublicKey(
+      publicKeyStr,
+      ownerUserId,
+      requestId,
+    );
     if (!dbKeypair) {
       logging.info(requestId, `Wallet not found in database: ${publicKeyStr}`);
       return [{ balance: null }, null];
@@ -189,6 +193,8 @@ export async function getBalanceByPublicKey(
         wsol_balance: wsolLamports,
         balance_status: keypairRepo.BalanceStatus.FRESH,
       },
+      ownerUserId,
+      requestId,
     );
 
     const walletBalance: WalletBalance = {

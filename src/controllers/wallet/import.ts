@@ -22,7 +22,7 @@ export const importWallet: RouterMiddleware<
     return;
   }
 
-  const [requestId, _telegramUser] = contextData;
+  const [requestId, telegramUser] = contextData;
   logging.info(requestId, "Importing existing wallet");
 
   try {
@@ -30,7 +30,9 @@ export const importWallet: RouterMiddleware<
 
     const [dbKeypair, error] = await keypairRepo.importWallet(
       secretKey,
+      telegramUser.id,
       label,
+      requestId,
     );
     if (!dbKeypair) {
       logging.error(requestId, `Failed to import wallet: ${error}`, error);

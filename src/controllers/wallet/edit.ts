@@ -32,7 +32,12 @@ export const bulkEditWallets: RouterMiddleware<
     const { walletIds, updates, delete: shouldDelete } = ctx.state.bodyData;
 
     const [result, error] = await walletService.bulkEditWallets(
-      { walletIds, updates, delete: shouldDelete },
+      {
+        walletIds,
+        updates,
+        delete: shouldDelete,
+        ownerUserId: telegramUser.id,
+      },
       requestId,
     );
 

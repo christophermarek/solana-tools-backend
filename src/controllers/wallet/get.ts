@@ -23,7 +23,7 @@ export const getWallet: RouterMiddleware<
     return;
   }
 
-  const [requestId, _telegramUser] = contextData;
+  const [requestId, telegramUser] = contextData;
   const { publicKey } = ctx.state.paramsData;
 
   logging.info(requestId, `Getting wallet with public key: ${publicKey}`);
@@ -31,6 +31,8 @@ export const getWallet: RouterMiddleware<
   try {
     const dbKeypair: DbKeypair | null = await keypairRepo.findByPublicKey(
       publicKey,
+      telegramUser.id,
+      requestId,
     );
 
     if (!dbKeypair) {

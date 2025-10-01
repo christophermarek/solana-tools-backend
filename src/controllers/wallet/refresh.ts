@@ -24,7 +24,7 @@ export const refreshWalletBalance: RouterMiddleware<
     return;
   }
 
-  const [requestId, _telegramUser] = contextData;
+  const [requestId, telegramUser] = contextData;
 
   try {
     const { walletIds } = ctx.state.bodyData;
@@ -35,7 +35,7 @@ export const refreshWalletBalance: RouterMiddleware<
     );
 
     const [result, error] = await walletService.refreshWalletBalances(
-      walletIds,
+      { walletIds, ownerUserId: telegramUser.id },
       requestId,
     );
 

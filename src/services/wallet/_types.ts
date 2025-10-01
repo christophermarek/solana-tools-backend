@@ -23,6 +23,7 @@ export interface WalletWithBalance extends Wallet {
 export interface CreateWalletParams {
   count?: number;
   label?: string;
+  ownerUserId: string;
 }
 
 export interface CreateWalletResult {
@@ -36,6 +37,7 @@ export interface BulkEditParams {
     label?: string;
   };
   delete?: boolean;
+  ownerUserId: string;
 }
 
 export interface BulkEditResult {
@@ -50,6 +52,7 @@ export interface BulkEditResult {
 
 export interface ListWalletsParams {
   includeBalances?: boolean;
+  ownerUserId: string;
 }
 
 export interface ListWalletsResult {
@@ -59,6 +62,11 @@ export interface ListWalletsResult {
     walletsWithNullBalance: number;
     refreshed: boolean;
   };
+}
+
+export interface RefreshBalancesParams {
+  walletIds: number[];
+  ownerUserId: string;
 }
 
 export interface RefreshBalancesResult {

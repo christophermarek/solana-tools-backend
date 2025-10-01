@@ -22,6 +22,7 @@ interface BotExecutionParameters {
 export async function startBotExecution(
   botType: BotType,
   parameters: BotExecutionParameters,
+  ownerUserId: string,
   requestId: string,
 ): Promise<[number, null] | [null, string]> {
   logging.info(requestId, "Bot execution requested", {
@@ -41,6 +42,7 @@ export async function startBotExecution(
 
   const [validation, validationError] = await validateWalletAndGetKeypair(
     parameters.walletId,
+    ownerUserId,
     requestId,
   );
   if (validationError) {

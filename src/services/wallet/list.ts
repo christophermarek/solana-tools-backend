@@ -7,15 +7,18 @@ import { mapWalletFromDb } from "./_utils.ts";
 import type { DbKeypair } from "../../db/repositories/keypairs.ts";
 
 export async function listWallets(
-  params: ListWalletsParams = {},
+  params: ListWalletsParams,
   requestId?: string | undefined,
 ): Promise<[ListWalletsResult, null] | [null, WalletErrors]> {
-  const { includeBalances = true } = params;
+  const { includeBalances = true, ownerUserId } = params;
 
   logging.info(requestId ?? TAG, "Listing wallets");
 
   try {
-    const keypairs: DbKeypair[] = await keypairRepo.listAll();
+    const keypairs: DbKeypair[] = await keypairRepo.listAll(
+      ownerUserId,
+      requestId ?? TAG,
+    );
 
     logging.info(requestId ?? TAG, `Found ${keypairs.length} wallets`);
 

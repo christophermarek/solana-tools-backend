@@ -19,19 +19,14 @@ export const listWallets: RouterMiddleware<
 
   const [requestId, telegramUser] = contextData;
 
-  const url = new URL(ctx.request.url);
-  const activeOnly = url.searchParams.get("activeOnly") === "true";
-
   logging.info(
     requestId,
-    `Listing wallets${
-      activeOnly ? " (active only)" : " (including inactive)"
-    } with cached balances for user ${telegramUser.telegram_id}`,
+    `Listing wallets with cached balances for user ${telegramUser.telegram_id}`,
   );
 
   try {
     const [result, error] = await walletService.listWallets(
-      { activeOnly, includeBalances: true },
+      { includeBalances: true, ownerUserId: telegramUser.id },
       requestId,
     );
 
@@ -48,7 +43,6 @@ export const listWallets: RouterMiddleware<
       wallets: result.wallets,
       meta: {
         ...result.meta,
-        activeOnly,
       },
     };
     ResponseUtil.success(ctx, responseData);

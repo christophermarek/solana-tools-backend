@@ -6,8 +6,10 @@ import {
   recordMigration,
 } from "./repositories/migrations.ts";
 import * as logging from "../utils/logging.ts";
+import { loadEnv } from "../utils/env.ts";
 
 export async function migrate() {
+  await loadEnv();
   await initializeDb();
   const requestId = "migration";
 

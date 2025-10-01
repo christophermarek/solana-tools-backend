@@ -1,22 +1,38 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { sell } from "../../services/pump-fun/sell.ts";
 import { SellTokenPayload } from "./_dto.ts";
-import logging, { getRequestId } from "../../utils/logging.ts";
+import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";
 import { Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AppRouterContext,
+  AppStateWithBody,
+  getContext,
+} from "../../middleware/_context.ts";
 
-export const sellToken: RouterMiddleware<string> = async (ctx) => {
-  const requestId = getRequestId(ctx);
+export const sellToken: RouterMiddleware<
+  string,
+  Record<string, string>,
+  AppStateWithBody<SellTokenPayload>
+> = async (ctx: AppRouterContext<SellTokenPayload>) => {
+  const [contextData, contextError] = getContext(ctx);
+
+  if (contextError) {
+    ResponseUtil.serverError(ctx, contextError);
+    return;
+  }
+
+  const [requestId, telegramUser] = contextData;
   logging.info(requestId, "Selling token");
 
   try {
-    const body = await ctx.request.body({ type: "json" })
-      .value as SellTokenPayload;
-    const { walletId, mintPublicKey, sellAmountSol, sellAmountSPL } = body;
+    const { walletId, mintPublicKey, sellAmountSol, sellAmountSPL } =
+      ctx.state.bodyData;
 
     const [validation, validationError] = await validateWalletAndGetKeypair(
       walletId,
+      telegramUser.id,
       requestId,
     );
     if (validationError) {

@@ -20,6 +20,7 @@ export interface WalletBalance {
 
 export interface GetBalanceParams {
   publicKey: string;
+  ownerUserId: string;
   requestId?: string;
 }
 

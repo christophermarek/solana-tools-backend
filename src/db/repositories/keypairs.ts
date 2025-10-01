@@ -26,6 +26,7 @@ export interface DbKeypair {
   wsol_balance?: number;
   last_balance_update?: string;
   balance_status: BalanceStatus;
+  owner_user_id: string;
 }
 
 export interface UpdateBalanceParams {
@@ -37,6 +38,7 @@ export interface UpdateBalanceParams {
 
 export async function create(
   keypair: Keypair,
+  ownerUserId: string,
   label?: string,
   requestId: string = "system",
 ): Promise<DbKeypair> {
@@ -47,8 +49,9 @@ export async function create(
         public_key,
         secret_key,
         label,
-        balance_status
-      ) VALUES (?, ?, ?, ?)
+        balance_status,
+        owner_user_id
+      ) VALUES (?, ?, ?, ?, ?)
     `);
 
     await stmt.run(
@@ -56,6 +59,7 @@ export async function create(
       bs58.encode(keypair.secretKey),
       label ?? null,
       BalanceStatus.UNKNOWN,
+      ownerUserId,
     );
     const newKeypair = await client.prepare(`
       SELECT * FROM keypairs WHERE public_key = ?
@@ -74,13 +78,14 @@ export async function create(
 
 export async function findById(
   id: number,
+  ownerUserId: string,
   requestId = "system",
 ): Promise<DbKeypair | null> {
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ?
-    `).get(id) as DbKeypair | undefined;
+      SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?
+    `).get(id, ownerUserId) as DbKeypair | undefined;
     return result || null;
   } catch (error) {
     logging.error(requestId, `Failed to find keypair with id ${id}`, error);
@@ -90,13 +95,14 @@ export async function findById(
 
 export async function findByPublicKey(
   publicKey: string,
+  ownerUserId: string,
   requestId = "system",
 ): Promise<DbKeypair | null> {
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ?
-    `).get(publicKey) as DbKeypair | undefined;
+      SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
+    `).get(publicKey, ownerUserId) as DbKeypair | undefined;
     return result || null;
   } catch (error) {
     logging.error(
@@ -108,12 +114,15 @@ export async function findByPublicKey(
   }
 }
 
-export async function listAll(requestId = "system"): Promise<DbKeypair[]> {
+export async function listAll(
+  ownerUserId: string,
+  requestId = "system",
+): Promise<DbKeypair[]> {
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs ORDER BY created_at DESC
-    `).all() as DbKeypair[];
+      SELECT * FROM keypairs WHERE owner_user_id = ? ORDER BY created_at DESC
+    `).all(ownerUserId) as DbKeypair[];
     return result;
   } catch (error) {
     logging.error(requestId, "Failed to list keypairs", error);
@@ -123,14 +132,29 @@ export async function listAll(requestId = "system"): Promise<DbKeypair[]> {
 
 export async function deleteById(
   id: number,
+  ownerUserId: string,
   requestId = "system",
 ): Promise<void> {
   const client = getClient();
   try {
+    const keypair = await findById(id, requestId);
+    if (!keypair) {
+      throw new Error(`Keypair with id ${id} not found`);
+    }
+
+    if (keypair.owner_user_id !== ownerUserId) {
+      throw new Error(
+        `Access denied: User ${ownerUserId} does not own keypair ${id}`,
+      );
+    }
+
     await client.prepare(`
-      DELETE FROM keypairs WHERE id = ?
-    `).run(id);
-    logging.info(requestId, `Deleted keypair with id ${id}`);
+      DELETE FROM keypairs WHERE id = ? AND owner_user_id = ?
+    `).run(id, ownerUserId);
+    logging.info(
+      requestId,
+      `Deleted keypair with id ${id} by owner ${ownerUserId}`,
+    );
   } catch (error) {
     logging.error(
       requestId,
@@ -141,29 +165,10 @@ export async function deleteById(
   }
 }
 
-export async function deleteByPublicKey(
-  publicKey: string,
-  requestId = "system",
-): Promise<void> {
-  const client = getClient();
-  try {
-    await client.prepare(`
-      DELETE FROM keypairs WHERE public_key = ?
-    `).run(publicKey);
-    logging.info(requestId, `Deleted keypair with public key ${publicKey}`);
-  } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to delete keypair with public key ${publicKey}`,
-      error,
-    );
-    throw error;
-  }
-}
-
 export async function updateBalance(
   id: number,
   params: UpdateBalanceParams,
+  ownerUserId: string,
   requestId = "system",
 ): Promise<DbKeypair> {
   const client = getClient();
@@ -194,19 +199,19 @@ export async function updateBalance(
     }
 
     updates.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(id);
+    values.push(id, ownerUserId);
 
     const sqlQuery = `
       UPDATE keypairs 
       SET ${updates.join(", ")}
-      WHERE id = ?
+      WHERE id = ? AND owner_user_id = ?
     `;
 
     await client.prepare(sqlQuery).run(...values);
 
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ?
-    `).get(id) as DbKeypair;
+      SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?
+    `).get(id, ownerUserId) as DbKeypair;
     return result;
   } catch (error) {
     logging.error(
@@ -221,6 +226,8 @@ export async function updateBalance(
 export async function updateBalanceByPublicKey(
   publicKey: string,
   params: UpdateBalanceParams,
+  ownerUserId: string,
+  _requestId = "system",
 ): Promise<DbKeypair> {
   const client = getClient();
 
@@ -250,19 +257,19 @@ export async function updateBalanceByPublicKey(
   }
 
   updates.push("updated_at = CURRENT_TIMESTAMP");
-  values.push(publicKey);
+  values.push(publicKey, ownerUserId);
 
   const sqlQuery = `
     UPDATE keypairs 
     SET ${updates.join(", ")}
-    WHERE public_key = ?
+    WHERE public_key = ? AND owner_user_id = ?
   `;
 
   await client.prepare(sqlQuery).run(...values);
 
   const result = await client.prepare(`
-    SELECT * FROM keypairs WHERE public_key = ?
-  `).get(publicKey) as DbKeypair;
+    SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
+  `).get(publicKey, ownerUserId) as DbKeypair;
   return result;
 }
 
@@ -278,92 +285,48 @@ export function toKeypair(secretKey: string): Keypair | null {
   }
 }
 
-export async function searchWallets(
-  searchTerm: string,
-): Promise<DbKeypair[]> {
-  const client = getClient();
-  const searchPattern = `%${searchTerm}%`;
-
-  const result = await client.prepare(`
-    SELECT * FROM keypairs 
-    WHERE public_key LIKE ? OR label LIKE ?
-    ORDER BY created_at DESC
-  `).all(searchPattern, searchPattern) as DbKeypair[];
-
-  return result;
-}
-
-export async function createMultiple(
-  count: number,
-  label?: string,
-): Promise<DbKeypair[]> {
-  const wallets: DbKeypair[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const keypair = Keypair.generate();
-    const wallet = await create(keypair, label);
-    wallets.push(wallet);
-  }
-
-  return wallets;
-}
-
 export async function updateLabel(
   id: number,
   label: string,
+  ownerUserId: string,
+  requestId = "system",
 ): Promise<DbKeypair | null> {
   const client = getClient();
-  await client.prepare(`
-    UPDATE keypairs 
-    SET 
-      label = ?,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(label ?? null, id);
+  try {
+    const keypair = await findById(id, requestId);
+    if (!keypair) {
+      throw new Error(`Keypair with id ${id} not found`);
+    }
 
-  const result = await client.prepare(`
-    SELECT * FROM keypairs WHERE id = ?
-  `).get(id) as DbKeypair | undefined;
-  return result || null;
-}
+    if (keypair.owner_user_id !== ownerUserId) {
+      throw new Error(
+        `Access denied: User ${ownerUserId} does not own keypair ${id}`,
+      );
+    }
 
-export async function findByIdIncludingInactive(
-  id: number,
-): Promise<DbKeypair | null> {
-  const client = getClient();
-  const result = await client.prepare(`
-    SELECT * FROM keypairs WHERE id = ?
-  `).get(id) as DbKeypair | undefined;
-  return result || null;
-}
+    await client.prepare(`
+      UPDATE keypairs 
+      SET 
+        label = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND owner_user_id = ?
+    `).run(label ?? null, id, ownerUserId);
 
-export async function getWalletStats(): Promise<WalletStats> {
-  const client = getClient();
-
-  const totalResult = await client.prepare(`
-    SELECT COUNT(*) as count FROM keypairs
-  `).get() as { count: number };
-
-  const solResult = await client.prepare(`
-    SELECT COALESCE(SUM(sol_balance), 0) as balance 
-    FROM keypairs 
-  `).get() as { balance: number };
-
-  const wsolResult = await client.prepare(`
-    SELECT COALESCE(SUM(wsol_balance), 0) as balance 
-    FROM keypairs 
-  `).get() as { balance: number };
-
-  return {
-    total_wallets: totalResult.count,
-    total_sol_balance: String(solResult.balance),
-    total_wsol_balance: String(wsolResult.balance),
-  };
+    const result = await client.prepare(`
+      SELECT * FROM keypairs WHERE id = ?
+    `).get(id) as DbKeypair | undefined;
+    return result || null;
+  } catch (error) {
+    logging.error(requestId, `Failed to update label for keypair ${id}`, error);
+    throw error;
+  }
 }
 
 export async function importWallet(
   secretKey: string,
+  ownerUserId: string,
   label?: string,
+  _requestId = "system",
 ): Promise<[DbKeypair, null] | [null, string]> {
   try {
     const client = getClient();
@@ -373,8 +336,8 @@ export async function importWallet(
     const publicKey = keypair.publicKey.toString();
 
     const existingWallet = await client.prepare(`
-    SELECT * FROM keypairs WHERE public_key = ?
-  `).get(publicKey) as DbKeypair | undefined;
+    SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
+  `).get(publicKey, ownerUserId) as DbKeypair | undefined;
 
     if (existingWallet) {
       return [existingWallet, null];
@@ -385,8 +348,9 @@ export async function importWallet(
       public_key,
       secret_key,
       label,
-      balance_status
-    ) VALUES (?, ?, ?, ?)
+      balance_status,
+      owner_user_id
+    ) VALUES (?, ?, ?, ?, ?)
   `);
 
     await stmt.run(
@@ -394,6 +358,7 @@ export async function importWallet(
       secretKey,
       label ?? null,
       BalanceStatus.UNKNOWN,
+      ownerUserId,
     );
     const newWallet = await client.prepare(`
     SELECT * FROM keypairs WHERE public_key = ?
@@ -405,96 +370,15 @@ export async function importWallet(
   }
 }
 
-export async function markWalletAsStale(
-  id: number,
-  requestId = "system",
-): Promise<DbKeypair> {
-  const client = getClient();
-  try {
-    await client.prepare(`
-      UPDATE keypairs
-      SET balance_status = 'STALE', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(id);
-
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ?
-    `).get(id) as DbKeypair;
-
-    logging.info(requestId, `Marked wallet ID ${id} as STALE`);
-    return result;
-  } catch (error) {
-    logging.error(requestId, `Failed to mark wallet ID ${id} as STALE`, error);
-    throw error;
-  }
-}
-
-export async function markWalletAsStaleByPublicKey(
-  publicKey: string,
-  requestId = "system",
-): Promise<DbKeypair> {
-  const client = getClient();
-  try {
-    await client.prepare(`
-      UPDATE keypairs
-      SET balance_status = 'STALE', updated_at = CURRENT_TIMESTAMP
-      WHERE public_key = ?
-    `).run(publicKey);
-
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ?
-    `).get(publicKey) as DbKeypair;
-
-    logging.info(requestId, `Marked wallet ${publicKey} as STALE`);
-    return result;
-  } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to mark wallet ${publicKey} as STALE`,
-      error,
-    );
-    throw error;
-  }
-}
-
-export async function markWalletsAsStale(
-  ids: number[],
-  requestId = "system",
-): Promise<void> {
-  if (ids.length === 0) return;
-
-  const client = getClient();
-  try {
-    const placeholders = ids.map(() => "?").join(",");
-    await client.prepare(`
-      UPDATE keypairs
-      SET balance_status = 'STALE', updated_at = CURRENT_TIMESTAMP
-      WHERE id IN (${placeholders})
-    `).run(...ids);
-    logging.info(requestId, `Marked ${ids.length} wallets as STALE`);
-  } catch (error) {
-    logging.error(requestId, `Failed to mark wallets as STALE`, error);
-    throw error;
-  }
-}
-
 export default {
   create,
   findById,
   findByPublicKey,
   listAll,
   deleteById,
-  deleteByPublicKey,
   updateBalance,
   updateBalanceByPublicKey,
   toKeypair,
-  searchWallets,
-  createMultiple,
   updateLabel,
-  findByIdIncludingInactive,
-  getWalletStats,
   importWallet,
-  markWalletAsStale,
-  markWalletAsStaleByPublicKey,
-  markWalletsAsStale,
 };

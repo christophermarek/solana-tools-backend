@@ -14,7 +14,7 @@ export async function createWallets(
   params: CreateWalletParams,
   requestId?: string | undefined,
 ): Promise<CreateWalletResult> {
-  const { count = 1, label } = params;
+  const { count = 1, label, ownerUserId } = params;
 
   logging.info(
     requestId ?? TAG,
@@ -51,6 +51,7 @@ export async function createWallets(
 
       const dbKeypair: DbKeypair = await keypairRepo.create(
         keypair,
+        ownerUserId,
         label,
         requestId ?? TAG,
       );

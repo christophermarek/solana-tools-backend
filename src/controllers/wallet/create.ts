@@ -31,7 +31,7 @@ export const createWallets: RouterMiddleware<
     const { count = 1, label } = ctx.state.bodyData;
 
     const result = await walletService.createWallets(
-      { count, label },
+      { count, label, ownerUserId: telegramUser.id },
       requestId,
     );
 
