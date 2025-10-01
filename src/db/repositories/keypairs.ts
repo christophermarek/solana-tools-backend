@@ -5,8 +5,6 @@ import * as logging from "../../utils/logging.ts";
 import type { BindValue } from "../types.ts";
 export interface WalletStats {
   total_wallets: number;
-  active_wallets: number;
-  inactive_wallets: number;
   total_sol_balance: string;
   total_wsol_balance: string;
 }
@@ -24,7 +22,6 @@ export interface DbKeypair {
   created_at: string;
   updated_at: string;
   label?: string;
-  is_active: number;
   sol_balance?: number;
   wsol_balance?: number;
   last_balance_update?: string;
@@ -82,7 +79,7 @@ export async function findById(
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ? AND is_active = 1
+      SELECT * FROM keypairs WHERE id = ?
     `).get(id) as DbKeypair | undefined;
     return result || null;
   } catch (error) {
@@ -98,7 +95,7 @@ export async function findByPublicKey(
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ? AND is_active = 1
+      SELECT * FROM keypairs WHERE public_key = ?
     `).get(publicKey) as DbKeypair | undefined;
     return result || null;
   } catch (error) {
@@ -111,63 +108,53 @@ export async function findByPublicKey(
   }
 }
 
-export async function listActive(requestId = "system"): Promise<DbKeypair[]> {
+export async function listAll(requestId = "system"): Promise<DbKeypair[]> {
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE is_active = 1 ORDER BY created_at DESC
+      SELECT * FROM keypairs ORDER BY created_at DESC
     `).all() as DbKeypair[];
     return result;
   } catch (error) {
-    logging.error(requestId, "Failed to list active keypairs", error);
+    logging.error(requestId, "Failed to list keypairs", error);
     throw error;
   }
 }
 
-export async function deactivate(
-  publicKey: string,
+export async function deleteById(
+  id: number,
   requestId = "system",
-): Promise<DbKeypair> {
+): Promise<void> {
   const client = getClient();
   try {
     await client.prepare(`
-      UPDATE keypairs SET is_active = 0, updated_at = CURRENT_TIMESTAMP
-      WHERE public_key = ?
-    `).run(publicKey);
-
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ?
-    `).get(publicKey) as DbKeypair;
-    return result;
+      DELETE FROM keypairs WHERE id = ?
+    `).run(id);
+    logging.info(requestId, `Deleted keypair with id ${id}`);
   } catch (error) {
     logging.error(
       requestId,
-      `Failed to deactivate keypair ${publicKey}`,
+      `Failed to delete keypair with id ${id}`,
       error,
     );
     throw error;
   }
 }
 
-export async function reactivate(
+export async function deleteByPublicKey(
   publicKey: string,
   requestId = "system",
-): Promise<DbKeypair> {
+): Promise<void> {
   const client = getClient();
   try {
     await client.prepare(`
-      UPDATE keypairs SET is_active = 1, updated_at = CURRENT_TIMESTAMP
-      WHERE public_key = ?
+      DELETE FROM keypairs WHERE public_key = ?
     `).run(publicKey);
-
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ?
-    `).get(publicKey) as DbKeypair;
-    return result;
+    logging.info(requestId, `Deleted keypair with public key ${publicKey}`);
   } catch (error) {
     logging.error(
       requestId,
-      `Failed to reactivate keypair ${publicKey}`,
+      `Failed to delete keypair with public key ${publicKey}`,
       error,
     );
     throw error;
@@ -291,36 +278,17 @@ export function toKeypair(secretKey: string): Keypair | null {
   }
 }
 
-export async function listAll(): Promise<DbKeypair[]> {
-  const client = getClient();
-  const result = await client.prepare(`
-    SELECT * FROM keypairs ORDER BY created_at DESC
-  `).all() as DbKeypair[];
-  return result;
-}
-
 export async function searchWallets(
   searchTerm: string,
-  includeInactive: boolean = false,
 ): Promise<DbKeypair[]> {
   const client = getClient();
   const searchPattern = `%${searchTerm}%`;
 
-  let result;
-  if (includeInactive) {
-    result = await client.prepare(`
-      SELECT * FROM keypairs 
-      WHERE public_key LIKE ? OR label LIKE ?
-      ORDER BY created_at DESC
-    `).all(searchPattern, searchPattern) as DbKeypair[];
-  } else {
-    result = await client.prepare(`
-      SELECT * FROM keypairs 
-      WHERE (public_key LIKE ? OR label LIKE ?)
-        AND is_active = 1
-      ORDER BY created_at DESC
-    `).all(searchPattern, searchPattern) as DbKeypair[];
-  }
+  const result = await client.prepare(`
+    SELECT * FROM keypairs 
+    WHERE public_key LIKE ? OR label LIKE ?
+    ORDER BY created_at DESC
+  `).all(searchPattern, searchPattern) as DbKeypair[];
 
   return result;
 }
@@ -369,28 +337,6 @@ export async function findByIdIncludingInactive(
   return result || null;
 }
 
-export async function deactivateById(id: number): Promise<void> {
-  const client = getClient();
-  await client.prepare(`
-    UPDATE keypairs 
-    SET 
-      is_active = 0, 
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(id);
-}
-
-export async function reactivateById(id: number): Promise<void> {
-  const client = getClient();
-  await client.prepare(`
-    UPDATE keypairs 
-    SET 
-      is_active = 1, 
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(id);
-}
-
 export async function getWalletStats(): Promise<WalletStats> {
   const client = getClient();
 
@@ -398,26 +344,18 @@ export async function getWalletStats(): Promise<WalletStats> {
     SELECT COUNT(*) as count FROM keypairs
   `).get() as { count: number };
 
-  const activeResult = await client.prepare(`
-    SELECT COUNT(*) as count FROM keypairs WHERE is_active = 1
-  `).get() as { count: number };
-
   const solResult = await client.prepare(`
     SELECT COALESCE(SUM(sol_balance), 0) as balance 
     FROM keypairs 
-    WHERE is_active = 1
   `).get() as { balance: number };
 
   const wsolResult = await client.prepare(`
     SELECT COALESCE(SUM(wsol_balance), 0) as balance 
     FROM keypairs 
-    WHERE is_active = 1
   `).get() as { balance: number };
 
   return {
     total_wallets: totalResult.count,
-    active_wallets: activeResult.count,
-    inactive_wallets: totalResult.count - activeResult.count,
     total_sol_balance: String(solResult.balance),
     total_wsol_balance: String(wsolResult.balance),
   };
@@ -439,22 +377,6 @@ export async function importWallet(
   `).get(publicKey) as DbKeypair | undefined;
 
     if (existingWallet) {
-      if (!existingWallet.is_active) {
-        await client.prepare(`
-        UPDATE keypairs 
-        SET 
-          is_active = 1, 
-          label = COALESCE(?, label),
-          updated_at = CURRENT_TIMESTAMP
-          balance_status = 'UNKNOWN'
-        WHERE public_key = ?
-      `).run(label ?? null, publicKey, BalanceStatus.UNKNOWN);
-
-        const result = await client.prepare(`
-        SELECT * FROM keypairs WHERE public_key = ?
-      `).get(publicKey) as DbKeypair;
-        return [result, null];
-      }
       return [existingWallet, null];
     }
 
@@ -560,18 +482,16 @@ export default {
   create,
   findById,
   findByPublicKey,
-  listActive,
-  deactivate,
+  listAll,
+  deleteById,
+  deleteByPublicKey,
   updateBalance,
   updateBalanceByPublicKey,
   toKeypair,
-  listAll,
   searchWallets,
   createMultiple,
   updateLabel,
   findByIdIncludingInactive,
-  deactivateById,
-  reactivateById,
   getWalletStats,
   importWallet,
   markWalletAsStale,

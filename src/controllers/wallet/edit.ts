@@ -29,10 +29,10 @@ export const bulkEditWallets: RouterMiddleware<
   );
 
   try {
-    const { walletIds, updates } = ctx.state.bodyData;
+    const { walletIds, updates, delete: shouldDelete } = ctx.state.bodyData;
 
     const [result, error] = await walletService.bulkEditWallets(
-      { walletIds, updates },
+      { walletIds, updates, delete: shouldDelete },
       requestId,
     );
 
@@ -55,6 +55,7 @@ export const bulkEditWallets: RouterMiddleware<
         total: walletIds.length,
         successful: result.successful.length,
         failed: result.failed.length,
+        operation: result.operation,
         successfulWallets: result.successful,
         failedWallets: result.failed,
       },

@@ -4,7 +4,6 @@ export interface Wallet {
   id: number;
   publicKey: string;
   label?: string;
-  isActive: boolean;
   createdAt: Date;
   solBalance?: number;
   wsolBalance?: number;
@@ -33,23 +32,23 @@ export interface CreateWalletResult {
 
 export interface BulkEditParams {
   walletIds: number[];
-  updates: {
+  updates?: {
     label?: string;
-    isActive?: boolean;
   };
+  delete?: boolean;
 }
 
 export interface BulkEditResult {
   successful: Array<{
     id: number;
     publicKey: string;
-    wallet: Wallet;
+    wallet?: Wallet; // Only present for edit operations
   }>;
   failed: Array<{ id: number; error: WalletErrors }>;
+  operation: "edit" | "delete";
 }
 
 export interface ListWalletsParams {
-  activeOnly?: boolean;
   includeBalances?: boolean;
 }
 
@@ -57,8 +56,6 @@ export interface ListWalletsResult {
   wallets: Wallet[];
   meta: {
     totalWallets: number;
-    activeWallets: number;
-    inactiveWallets: number;
     walletsWithNullBalance: number;
     refreshed: boolean;
   };

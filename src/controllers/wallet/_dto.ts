@@ -39,10 +39,10 @@ export const bulkEditWalletsRequestDto = z.object({
     .max(50, "Maximum of 50 wallet IDs allowed at once"),
   updates: z.object({
     label: z.string().optional(),
-    isActive: z.boolean().optional(),
-  }).refine((data) => data.label !== undefined || data.isActive !== undefined, {
-    message: "At least one update field (label or isActive) must be provided",
-  }),
+  }).optional(),
+  delete: z.boolean().optional(),
+}).refine((data) => data.updates !== undefined || data.delete === true, {
+  message: "Either updates or delete must be provided",
 });
 
 export type BulkEditWalletsPayload = z.infer<typeof bulkEditWalletsRequestDto>;
@@ -82,11 +82,8 @@ export interface ListWalletsResponse {
   wallets: Wallet[];
   meta: {
     totalWallets: number;
-    activeWallets: number;
-    inactiveWallets: number;
     walletsWithNullBalance: number;
     refreshed: boolean;
-    activeOnly: boolean;
   };
 }
 
@@ -95,10 +92,11 @@ export interface BulkEditWalletsResponse {
     total: number;
     successful: number;
     failed: number;
+    operation: "edit" | "delete";
     successfulWallets: Array<{
       id: number;
       publicKey: string;
-      wallet: Wallet;
+      wallet?: Wallet; // Only present for edit operations
     }>;
     failedWallets: Array<{ id: number; error: WalletErrors }>;
   };

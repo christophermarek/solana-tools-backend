@@ -37,7 +37,6 @@ export function mapWalletFromDb(dbKeypair: DbKeypair): Wallet {
     id: dbKeypair.id,
     publicKey: dbKeypair.public_key,
     label: dbKeypair.label ?? undefined,
-    isActive: Boolean(dbKeypair.is_active),
     createdAt: new Date(dbKeypair.created_at),
     solBalance: dbKeypair.sol_balance
       ? Number(dbKeypair.sol_balance) / 1e9
@@ -64,7 +63,6 @@ export function mapWalletWithBalanceFromDb(
     id: dbKeypair.id,
     publicKey: dbKeypair.public_key,
     label: dbKeypair.label ?? undefined,
-    isActive: Boolean(dbKeypair.is_active),
     createdAt: new Date(dbKeypair.created_at),
     solBalance: balance.solBalance,
     wsolBalance: balance.wsolBalance,
@@ -91,15 +89,6 @@ export async function validateWalletAndGetKeypair(
       new Error("Wallet not found"),
     );
     return [null, "Wallet not found"];
-  }
-
-  if (!wallet.is_active) {
-    logging.error(
-      requestId,
-      `Wallet with ID ${walletId} is inactive`,
-      new Error("Wallet is inactive"),
-    );
-    return [null, "Wallet is inactive"];
   }
 
   const keypair = keypairRepo.toKeypair(wallet.secret_key);

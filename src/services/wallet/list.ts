@@ -10,24 +10,14 @@ export async function listWallets(
   params: ListWalletsParams = {},
   requestId?: string | undefined,
 ): Promise<[ListWalletsResult, null] | [null, WalletErrors]> {
-  const { activeOnly = false, includeBalances = true } = params;
+  const { includeBalances = true } = params;
 
-  logging.info(
-    requestId ?? TAG,
-    `Listing wallets${activeOnly ? " (active only)" : " (including inactive)"}`,
-  );
+  logging.info(requestId ?? TAG, "Listing wallets");
 
   try {
-    const keypairs: DbKeypair[] = activeOnly
-      ? await keypairRepo.listActive()
-      : await keypairRepo.listAll();
+    const keypairs: DbKeypair[] = await keypairRepo.listAll();
 
-    logging.info(
-      requestId ?? TAG,
-      `Found ${keypairs.length} wallets${
-        activeOnly ? " (active only)" : " (including inactive)"
-      }`,
-    );
+    logging.info(requestId ?? TAG, `Found ${keypairs.length} wallets`);
 
     const wallets: Wallet[] = keypairs.map((kp: DbKeypair) => {
       const wallet: Wallet = mapWalletFromDb(kp);
@@ -50,8 +40,6 @@ export async function listWallets(
 
     const meta: ListWalletsResult["meta"] = {
       totalWallets: wallets.length,
-      activeWallets: wallets.filter((w) => w.isActive).length,
-      inactiveWallets: wallets.filter((w) => !w.isActive).length,
       walletsWithNullBalance: walletsWithNullBalance.length,
       refreshed: false,
     };

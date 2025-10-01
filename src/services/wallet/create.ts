@@ -59,7 +59,6 @@ export async function createWallets(
         id: dbKeypair.id,
         publicKey: dbKeypair.public_key,
         label: dbKeypair.label,
-        isActive: Boolean(dbKeypair.is_active),
         createdAt: new Date(dbKeypair.created_at),
         solBalance: 0,
         wsolBalance: 0,

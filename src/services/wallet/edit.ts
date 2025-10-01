@@ -10,16 +10,24 @@ export async function bulkEditWallets(
   params: BulkEditParams,
   requestId?: string | undefined,
 ): Promise<[BulkEditResult, null] | [null, WalletErrors]> {
-  const { walletIds, updates } = params;
+  const { walletIds, updates, delete: shouldDelete } = params;
 
-  logging.info(requestId ?? TAG, `Bulk editing ${walletIds.length} wallets`, {
-    walletCount: walletIds.length,
-    updates,
-  });
+  const operation = shouldDelete ? "delete" : "edit";
+
+  logging.info(
+    requestId ?? TAG,
+    `Bulk ${operation}ing ${walletIds.length} wallets`,
+    {
+      walletCount: walletIds.length,
+      updates,
+      delete: shouldDelete,
+    },
+  );
 
   const results: BulkEditResult = {
     successful: [],
     failed: [],
+    operation,
   };
 
   for (const id of walletIds) {
@@ -36,59 +44,49 @@ export async function bulkEditWallets(
         continue;
       }
 
-      let walletUpdated = false;
-
-      if (updates.label !== undefined) {
+      if (shouldDelete) {
+        logging.debug(requestId ?? TAG, `Deleting wallet ${id}`);
+        await keypairRepo.deleteById(id);
+        results.successful.push({
+          id,
+          publicKey: wallet.public_key,
+        });
+        logging.info(requestId ?? TAG, `Successfully deleted wallet ${id}`);
+      } else if (updates !== undefined && updates.label !== undefined) {
         logging.debug(
           requestId ?? TAG,
           `Updating label for wallet ${id} to "${updates.label}"`,
         );
         await keypairRepo.updateLabel(id, updates.label);
-        walletUpdated = true;
-      }
 
-      if (updates.isActive !== undefined) {
-        if (updates.isActive && !wallet.is_active) {
-          logging.debug(requestId ?? TAG, `Activating wallet ${id}`);
-          await keypairRepo.reactivateById(id);
-          walletUpdated = true;
-        } else if (!updates.isActive && wallet.is_active) {
-          logging.debug(requestId ?? TAG, `Deactivating wallet ${id}`);
-          await keypairRepo.deactivateById(id);
-          walletUpdated = true;
-        } else {
-          logging.debug(
-            requestId ?? TAG,
-            `Wallet ${id} is already ${
-              updates.isActive ? "active" : "inactive"
-            }`,
-          );
+        const updatedWallet: DbKeypair | null = await keypairRepo
+          .findByIdIncludingInactive(id);
+        if (!updatedWallet) {
+          throw new Error(`Failed to retrieve updated wallet with ID ${id}`);
         }
+
+        const mappedWallet: Wallet = mapWalletFromDb(updatedWallet);
+        results.successful.push({
+          id,
+          publicKey: updatedWallet.public_key,
+          wallet: mappedWallet,
+        });
+
+        logging.info(requestId ?? TAG, `Successfully updated wallet ${id}`);
+      } else {
+        logging.warn(
+          requestId ?? TAG,
+          `No valid operation specified for wallet ${id}`,
+        );
+        results.failed.push({
+          id,
+          error: WALLET_ERRORS.ERROR_BULK_EDITING_WALLETS,
+        });
       }
-
-      const updatedWallet: DbKeypair | null = await keypairRepo
-        .findByIdIncludingInactive(id);
-      if (!updatedWallet) {
-        throw new Error(`Failed to retrieve updated wallet with ID ${id}`);
-      }
-
-      const mappedWallet: Wallet = mapWalletFromDb(updatedWallet);
-      results.successful.push({
-        id,
-        publicKey: updatedWallet.public_key,
-        wallet: mappedWallet,
-      });
-
-      logging.info(
-        requestId ?? TAG,
-        `Successfully updated wallet ${id}${
-          walletUpdated ? "" : " (no changes needed)"
-        }`,
-      );
     } catch (walletError) {
       logging.error(
         requestId ?? TAG,
-        `Error updating wallet with ID ${id}`,
+        `Error ${operation}ing wallet with ID ${id}`,
         walletError,
       );
       results.failed.push({
@@ -100,7 +98,7 @@ export async function bulkEditWallets(
 
   logging.info(
     requestId ?? TAG,
-    `Bulk edit completed. Success: ${results.successful.length}, Failed: ${results.failed.length}`,
+    `Bulk ${operation} completed. Success: ${results.successful.length}, Failed: ${results.failed.length}`,
   );
 
   return [results, null];
