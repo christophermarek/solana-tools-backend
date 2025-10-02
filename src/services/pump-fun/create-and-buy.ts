@@ -11,17 +11,22 @@ import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
 import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { TransactionStatus } from "../../db/repositories/transactions.ts";
+import { getSPLBalance } from "./get-spl-balance.ts";
+import * as pumpfunMintsRepo from "../../db/repositories/pumpfun-mints.ts";
 
 export async function createAndBuy(
   creator: Keypair,
   tokenMeta: CreateTokenMetadata,
   buyAmountSol: number,
+  telegramUserId: string,
 ): Promise<
   [{
     transactionResult: VersionedTransactionResponse;
     mint: Keypair;
     curve: BondingCurveAccount;
     pumpLink: string;
+    amountBought: number;
+    totalSolSpent: number;
   }, null] | [null, PumpFunErrors]
 > {
   logging.info(TAG, "Creating token & first buy");
@@ -56,14 +61,20 @@ export async function createAndBuy(
       priorityFee,
     );
     if (!res.success) {
-      const errorMessage = res.error as string;
+      const errorMessage = typeof res.error === "string"
+        ? res.error
+        : res.error?.message || JSON.stringify(res.error) || "Unknown error";
+
       logging.error(
         TAG,
         "Failed to create and buy",
         new Error(errorMessage),
       );
 
-      if (errorMessage.includes("insufficient lamports")) {
+      if (
+        errorMessage.includes("insufficient lamports") ||
+        errorMessage.includes("insufficient funds")
+      ) {
         const [balanceResult, balanceError] = await solanaService.getSolBalance(
           {
             publicKey: creator.publicKey,
@@ -73,8 +84,13 @@ export async function createAndBuy(
           const currentBalance = solanaService.lamportsToSol(
             balanceResult.balance,
           );
+          const requiredAmount = buyAmountSol;
+          const shortfall = requiredAmount - currentBalance;
           const enhancedError =
-            `${errorMessage}. Current wallet balance: ${currentBalance} SOL. Please fund the wallet with more SOL.`;
+            `Insufficient SOL balance. Required: ${requiredAmount} SOL, Available: ${currentBalance} SOL. ` +
+            `Shortfall: ${
+              shortfall.toFixed(6)
+            } SOL. Please fund the wallet with more SOL.`;
           return [
             null,
             { type: "SDK_ERROR", message: enhancedError } as SDKError,
@@ -117,6 +133,21 @@ export async function createAndBuy(
 
     const pumpLink = `https://pump.fun/${mint.publicKey.toBase58()}`;
 
+    const [finalBalance, balanceError] = await getSPLBalance(
+      creator.publicKey,
+      mint.publicKey,
+    );
+
+    if (balanceError) {
+      logging.warn(TAG, "Failed to get final SPL balance", balanceError);
+    }
+
+    const amountBought = balanceError ? 0 : finalBalance;
+
+    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
+    const totalSolSpent = buyAmountSol +
+      solanaService.lamportsToSol(transactionFee);
+
     if (transactionId) {
       await transactionRepo.update(transactionId, {
         status: TransactionStatus.CONFIRMED,
@@ -125,10 +156,29 @@ export async function createAndBuy(
       });
     }
 
+    try {
+      await pumpfunMintsRepo.create({
+        mint_public_key: mint.publicKey.toString(),
+        telegram_user_id: telegramUserId,
+      });
+      logging.info(TAG, "Mint tracked in database", {
+        mint: mint.publicKey.toString(),
+        telegramUserId,
+      });
+    } catch (mintError) {
+      logging.warn(TAG, "Failed to track mint in database", mintError);
+    }
+
     logging.info(
       TAG,
       "Created! Pump link:",
-      pumpLink,
+      {
+        pumpLink,
+        amountBought,
+        totalSolSpent,
+        buyAmountSol,
+        transactionFee: solanaService.lamportsToSol(transactionFee),
+      },
     );
 
     return [
@@ -137,6 +187,8 @@ export async function createAndBuy(
         mint,
         curve,
         pumpLink,
+        amountBought,
+        totalSolSpent,
       },
       null,
     ];

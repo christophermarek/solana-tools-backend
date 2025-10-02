@@ -38,6 +38,8 @@ Deno.test({
           curve: result.curve,
           mint: result.mint.publicKey.toString(),
           pumpLink: result.pumpLink,
+          amountBought: result.amountBought,
+          totalSolSpent: result.totalSolSpent,
         }),
       );
     }
@@ -51,6 +53,8 @@ Deno.test({
     assertExists(result.mint, "Mint should exist");
     assertExists(result.curve, "Curve should exist");
     assertExists(result.pumpLink, "Pump link should exist");
+    assertExists(result.amountBought, "Amount bought should exist");
+    assertExists(result.totalSolSpent, "Total SOL spent should exist");
   },
   sanitizeResources: false,
   sanitizeOps: false,

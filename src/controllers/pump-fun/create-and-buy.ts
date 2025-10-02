@@ -57,6 +57,7 @@ export const createAndBuyToken: RouterMiddleware<
       keypair,
       fullTokenMeta,
       buyAmountSol,
+      telegramUser.telegram_id,
     );
 
     if (error) {
@@ -71,7 +72,6 @@ export const createAndBuyToken: RouterMiddleware<
     }
 
     const responseData = {
-      transaction: result!.transactionResult,
       mint: {
         publicKey: result!.mint.publicKey.toString(),
         secretKey: result!.mint.secretKey.toString(),
@@ -83,11 +83,15 @@ export const createAndBuyToken: RouterMiddleware<
         realTokenReserves: result!.curve.realTokenReserves.toString(),
       },
       pumpLink: result!.pumpLink,
+      amountBought: result!.amountBought,
+      totalSolSpent: result!.totalSolSpent,
     };
 
     logging.info(requestId, "Token created and bought successfully", {
       mint: result!.mint.publicKey.toString(),
       pumpLink: result!.pumpLink,
+      amountBought: result!.amountBought,
+      totalSolSpent: result!.totalSolSpent,
     });
 
     ResponseUtil.created(ctx, responseData);

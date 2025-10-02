@@ -1,0 +1,15 @@
+-- Migration: 012_create_pumpfun_mints_table
+-- Description: Create pumpfun_mints table to track mints created by users
+
+CREATE TABLE IF NOT EXISTS pumpfun_mints (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mint_public_key VARCHAR(44) NOT NULL UNIQUE,
+  telegram_user_id VARCHAR(255) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_pumpfun_mints_telegram_user_id ON pumpfun_mints(telegram_user_id);
+CREATE INDEX IF NOT EXISTS idx_pumpfun_mints_mint_public_key ON pumpfun_mints(mint_public_key);
+CREATE INDEX IF NOT EXISTS idx_pumpfun_mints_created_at ON pumpfun_mints(created_at);

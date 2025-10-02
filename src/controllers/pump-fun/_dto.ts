@@ -89,3 +89,56 @@ export const getTokenBalanceSchema = z.object({
 });
 
 export type GetTokenBalancePayload = z.infer<typeof getTokenBalanceSchema>;
+
+export interface PumpfunMintResponse {
+  id: number;
+  mint_public_key: string;
+  telegram_user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListPumpfunMintsResponse {
+  mints: PumpfunMintResponse[];
+  meta: {
+    total: number;
+    count: number;
+  };
+}
+
+export const trackMintSchema = z.object({
+  mint_public_key: z.string()
+    .length(
+      44,
+      "Invalid mint public key format - must be exactly 44 characters",
+    )
+    .regex(
+      /^[1-9A-HJ-NP-Za-km-z]{44}$/,
+      "Invalid mint public key format - must be base58 encoded",
+    ),
+});
+
+export type TrackMintPayload = z.infer<typeof trackMintSchema>;
+
+export interface TrackMintResponse {
+  mint: PumpfunMintResponse;
+  message: string;
+}
+
+export const untrackMintSchema = z.object({
+  mint_public_key: z.string()
+    .length(
+      44,
+      "Invalid mint public key format - must be exactly 44 characters",
+    )
+    .regex(
+      /^[1-9A-HJ-NP-Za-km-z]{44}$/,
+      "Invalid mint public key format - must be base58 encoded",
+    ),
+});
+
+export type UntrackMintPayload = z.infer<typeof untrackMintSchema>;
+
+export interface UntrackMintResponse {
+  message: string;
+}

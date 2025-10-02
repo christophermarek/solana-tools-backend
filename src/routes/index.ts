@@ -6,9 +6,10 @@ import { botRouter } from "./bot.ts";
 import { adminRouter } from "./whitelist.ts";
 import * as logging from "../utils/logging.ts";
 import { ResponseUtil } from "./response.ts";
+import { AppContext } from "../middleware/_context.ts";
 
 const notFoundHandler = (ctx: Context) => {
-  const requestId = logging.getRequestId(ctx);
+  const requestId = logging.getRequestId(ctx as AppContext);
   logging.info(
     requestId,
     `404 Not Found: ${ctx.request.method} ${ctx.request.url.pathname}`,
