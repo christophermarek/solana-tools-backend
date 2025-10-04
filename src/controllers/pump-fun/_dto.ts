@@ -11,16 +11,43 @@ export const createAndBuySchema = z.object({
       10,
       "Token symbol must be 10 characters or less",
     ),
-    uri: z.string().url("Token URI must be a valid URL").max(
+    description: z.string().min(1, "Token description must not be empty").max(
+      1000,
+      "Token description must be 1000 characters or less",
+    ).optional(),
+    imageBase64: z.string().min(1, "Image file must not be empty").max(
+      20971520,
+      "Image file is too large (max 15MB)",
+    ).optional(),
+    twitter: z.string().url("Twitter URL must be a valid URL").max(
       200,
-      "Token URI must be 200 characters or less",
-    ),
-    description: z.string().optional(),
+      "Twitter URL must be 200 characters or less",
+    ).optional(),
+    telegram: z.string().url("Telegram URL must be a valid URL").max(
+      200,
+      "Telegram URL must be 200 characters or less",
+    ).optional(),
+    website: z.string().url("Website URL must be a valid URL").max(
+      200,
+      "Website URL must be 200 characters or less",
+    ).optional(),
   }),
   buyAmountSol: z.number().positive("Buy amount must be positive").max(
     1000,
     "Buy amount cannot exceed 1000 SOL",
   ),
+  slippageBps: z.number().int().min(
+    1,
+    "Slippage must be at least 1 basis point",
+  )
+    .max(10000, "Slippage cannot exceed 10000 basis points (100%)")
+    .optional(),
+  priorityFee: z.object({
+    unitLimit: z.number().int().positive("Unit limit must be positive")
+      .max(1_400_000, "Unit limit cannot exceed 1,400,000"),
+    unitPrice: z.number().int().positive("Unit price must be positive")
+      .max(1_000_000, "Unit price cannot exceed 1,000,000 lamports"),
+  }).optional(),
 });
 
 export type CreateAndBuyPayload = z.infer<typeof createAndBuySchema>;

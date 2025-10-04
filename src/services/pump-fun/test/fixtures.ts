@@ -55,8 +55,14 @@ export async function createTestToken(useCache = true): Promise<TestToken> {
   } as CreateTokenMetadata;
 
   const buyAmountSol = 0.01;
+  const testTelegramUserId = "test-user-123";
 
-  const [result, error] = await createAndBuy(creator, meta, buyAmountSol);
+  const [result, error] = await createAndBuy(
+    creator,
+    meta,
+    buyAmountSol,
+    testTelegramUserId,
+  );
   if (error) {
     throw new Error(`createAndBuy failed with error: ${error}`);
   }

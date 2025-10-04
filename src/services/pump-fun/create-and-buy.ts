@@ -19,6 +19,8 @@ export async function createAndBuy(
   tokenMeta: CreateTokenMetadata,
   buyAmountSol: number,
   telegramUserId: string,
+  slippageBps?: number,
+  priorityFeeOverride?: { unitLimit: number; unitPrice: number },
 ): Promise<
   [{
     transactionResult: VersionedTransactionResponse;
@@ -40,14 +42,25 @@ export async function createAndBuy(
 
     const mint = Keypair.generate();
     const buyAmountLamports = BigInt(solanaService.solToLamports(buyAmountSol));
-    const priorityFee = getPriorityFee();
+    const priorityFee = priorityFeeOverride || getPriorityFee();
+    const slippage = slippageBps !== undefined
+      ? BigInt(slippageBps)
+      : SLIPPAGE_BPS;
+
     logging.info(TAG, "Create and buy parameters", {
       creator: creator.publicKey.toString(),
       mint: mint.publicKey.toString(),
-      tokenMeta,
+      tokenMeta: {
+        name: tokenMeta.name,
+        symbol: tokenMeta.symbol,
+        description: tokenMeta.description,
+        twitter: tokenMeta.twitter,
+        telegram: tokenMeta.telegram,
+        website: tokenMeta.website,
+      },
       buyAmountSol,
       buyAmountLamports: buyAmountLamports.toString(),
-      slippageBps: SLIPPAGE_BPS.toString(),
+      slippageBps: slippage.toString(),
       priorityFee,
     });
     logging.info(TAG, "Mint: ", mint.publicKey.toString());
@@ -57,13 +70,15 @@ export async function createAndBuy(
       mint,
       tokenMeta,
       buyAmountLamports,
-      SLIPPAGE_BPS,
+      slippage,
       priorityFee,
     );
     if (!res.success) {
       const errorMessage = typeof res.error === "string"
         ? res.error
-        : res.error?.message || JSON.stringify(res.error) || "Unknown error";
+        : (res.error instanceof Error
+          ? res.error.message
+          : JSON.stringify(res.error)) || "Unknown error";
 
       logging.error(
         TAG,
@@ -111,7 +126,7 @@ export async function createAndBuy(
       sender_public_key: creator.publicKey.toString(),
       status: TransactionStatus.PENDING,
       slot: res.results.slot,
-      slippage_bps: Number(SLIPPAGE_BPS),
+      slippage_bps: Number(slippage),
       priority_fee_unit_limit: priorityFee.unitLimit,
       priority_fee_unit_price_lamports: priorityFee.unitPrice,
     });

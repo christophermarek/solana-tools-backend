@@ -26,8 +26,14 @@ Deno.test({
     } as CreateTokenMetadata;
 
     const buyAmountSol = 0.01;
+    const testTelegramUserId = "test-user-123";
 
-    const [result, error] = await createAndBuy(creator, meta, buyAmountSol);
+    const [result, error] = await createAndBuy(
+      creator,
+      meta,
+      buyAmountSol,
+      testTelegramUserId,
+    );
     if (result !== null) {
       logging.info(
         "createAndBuy",

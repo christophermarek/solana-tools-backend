@@ -137,7 +137,7 @@ export async function deleteById(
 ): Promise<void> {
   const client = getClient();
   try {
-    const keypair = await findById(id, requestId);
+    const keypair = await findById(id, ownerUserId, requestId);
     if (!keypair) {
       throw new Error(`Keypair with id ${id} not found`);
     }
@@ -293,7 +293,7 @@ export async function updateLabel(
 ): Promise<DbKeypair | null> {
   const client = getClient();
   try {
-    const keypair = await findById(id, requestId);
+    const keypair = await findById(id, ownerUserId, requestId);
     if (!keypair) {
       throw new Error(`Keypair with id ${id} not found`);
     }

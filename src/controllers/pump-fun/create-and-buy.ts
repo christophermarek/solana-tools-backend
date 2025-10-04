@@ -4,6 +4,8 @@ import { CreateAndBuyPayload } from "./_dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
 import { validateWalletAndGetKeypair } from "../../services/wallet/_utils.ts";
+import { validateImageForPumpFun } from "../../services/pump-fun/validate-image.ts";
+import { type CreateTokenMetadata } from "pumpdotfun-repumped-sdk";
 import {
   AppRouterContext,
   AppStateWithBody,
@@ -26,7 +28,8 @@ export const createAndBuyToken: RouterMiddleware<
   logging.info(requestId, "Creating and buying token");
 
   try {
-    const { walletId, tokenMeta, buyAmountSol } = ctx.state.bodyData;
+    const { walletId, tokenMeta, buyAmountSol, slippageBps, priorityFee } =
+      ctx.state.bodyData;
 
     const [validation, validationError] = await validateWalletAndGetKeypair(
       walletId,
@@ -46,18 +49,45 @@ export const createAndBuyToken: RouterMiddleware<
 
     const keypair = validation!.keypair;
 
-    const fullTokenMeta = {
-      ...tokenMeta,
-      description: tokenMeta.description ||
-        `${tokenMeta.name} - ${tokenMeta.symbol}`,
-      file: new Blob(),
-    };
+    let imageBlob: Blob | undefined;
+
+    if (tokenMeta.imageBase64) {
+      const [imageValidation, imageError] = validateImageForPumpFun(
+        tokenMeta.imageBase64,
+        requestId,
+      );
+
+      if (imageError) {
+        logging.warn(requestId, "Image validation failed", imageError);
+        ResponseUtil.badRequest(ctx, imageError.message);
+        return;
+      }
+
+      imageBlob = imageValidation.blob;
+    } else {
+      logging.info(requestId, "No image provided, file will be omitted");
+    }
+
+    const description = tokenMeta.description ||
+      `${tokenMeta.name} - ${tokenMeta.symbol}`;
+
+    const fullTokenMeta: CreateTokenMetadata = {
+      name: tokenMeta.name,
+      symbol: tokenMeta.symbol,
+      description,
+      ...(imageBlob && { file: imageBlob }),
+      twitter: tokenMeta.twitter,
+      telegram: tokenMeta.telegram,
+      website: tokenMeta.website,
+    } as CreateTokenMetadata;
 
     const [result, error] = await createAndBuy(
       keypair,
       fullTokenMeta,
       buyAmountSol,
       telegramUser.telegram_id,
+      slippageBps,
+      priorityFee,
     );
 
     if (error) {
