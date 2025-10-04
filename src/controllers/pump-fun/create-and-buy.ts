@@ -49,7 +49,7 @@ export const createAndBuyToken: RouterMiddleware<
 
     const keypair = validation!.keypair;
 
-    let imageBlob: Blob | undefined;
+    let imageBlob: Blob;
 
     if (tokenMeta.imageBase64) {
       const [imageValidation, imageError] = validateImageForPumpFun(
@@ -65,7 +65,8 @@ export const createAndBuyToken: RouterMiddleware<
 
       imageBlob = imageValidation.blob;
     } else {
-      logging.info(requestId, "No image provided, file will be omitted");
+      logging.info(requestId, "No image provided, using empty blob");
+      imageBlob = new Blob();
     }
 
     const description = tokenMeta.description ||
@@ -75,10 +76,10 @@ export const createAndBuyToken: RouterMiddleware<
       name: tokenMeta.name,
       symbol: tokenMeta.symbol,
       description,
-      ...(imageBlob && { file: imageBlob }),
-      twitter: tokenMeta.twitter,
-      telegram: tokenMeta.telegram,
-      website: tokenMeta.website,
+      file: imageBlob,
+      ...(tokenMeta.twitter && { twitter: tokenMeta.twitter }),
+      ...(tokenMeta.telegram && { telegram: tokenMeta.telegram }),
+      ...(tokenMeta.website && { website: tokenMeta.website }),
     } as CreateTokenMetadata;
 
     const [result, error] = await createAndBuy(

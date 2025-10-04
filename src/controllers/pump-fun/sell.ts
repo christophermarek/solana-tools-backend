@@ -27,8 +27,13 @@ export const sellToken: RouterMiddleware<
   logging.info(requestId, "Selling token");
 
   try {
-    const { walletId, mintPublicKey, sellAmountSol, sellAmountSPL } =
-      ctx.state.bodyData;
+    const {
+      walletId,
+      mintPublicKey,
+      sellAmountSol,
+      sellAmountSPL,
+      slippageBps,
+    } = ctx.state.bodyData;
 
     const [validation, validationError] = await validateWalletAndGetKeypair(
       walletId,
@@ -54,6 +59,7 @@ export const sellToken: RouterMiddleware<
     const sellParams = {
       ...(sellAmountSol !== undefined && { sellAmountSol }),
       ...(sellAmountSPL !== undefined && { sellAmountSPL }),
+      ...(slippageBps !== undefined && { slippageBps }),
     };
 
     const [result, error] = await sell(keypair, mintKeypair, sellParams);

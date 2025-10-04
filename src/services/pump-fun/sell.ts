@@ -13,6 +13,7 @@ import { TransactionStatus } from "../../db/repositories/transactions.ts";
 export interface SellTokenParams {
   sellAmountSol?: number;
   sellAmountSPL?: number;
+  slippageBps?: number;
 }
 
 export async function sell(
@@ -66,6 +67,9 @@ export async function sell(
 
     logging.info(TAG, "Mint: ", mint.publicKey.toString());
     const priorityFee = getPriorityFee();
+    const slippage = params.slippageBps !== undefined
+      ? BigInt(params.slippageBps)
+      : SLIPPAGE_BPS;
 
     logging.info(TAG, "Sell parameters", {
       seller: seller.publicKey.toString(),
@@ -73,7 +77,7 @@ export async function sell(
       sellType,
       sellAmount,
       sellAmountLamports: sellAmountLamports.toString(),
-      slippageBps: SLIPPAGE_BPS.toString(),
+      slippageBps: slippage.toString(),
       priorityFee,
     });
 
@@ -81,7 +85,7 @@ export async function sell(
       seller,
       mint.publicKey,
       sellAmountLamports,
-      SLIPPAGE_BPS,
+      slippage,
       priorityFee,
     );
 
@@ -122,7 +126,7 @@ export async function sell(
       sender_public_key: seller.publicKey.toString(),
       status: TransactionStatus.PENDING,
       slot: res.results.slot,
-      slippage_bps: Number(SLIPPAGE_BPS),
+      slippage_bps: Number(slippage),
       priority_fee_unit_limit: priorityFee.unitLimit,
       priority_fee_unit_price_lamports: priorityFee.unitPrice,
     });

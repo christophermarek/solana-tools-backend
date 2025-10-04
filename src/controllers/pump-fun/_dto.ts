@@ -67,6 +67,12 @@ export const buyTokenSchema = z.object({
     1000,
     "Buy amount cannot exceed 1000 SOL",
   ),
+  slippageBps: z.number().int().min(
+    1,
+    "Slippage must be at least 1 basis point",
+  )
+    .max(10000, "Slippage cannot exceed 10000 basis points (100%)")
+    .optional(),
 });
 
 export type BuyTokenPayload = z.infer<typeof buyTokenSchema>;
@@ -90,6 +96,12 @@ export const sellTokenSchema = z.object({
     1000000000,
     "Sell amount cannot exceed 1 billion tokens",
   ).optional(),
+  slippageBps: z.number().int().min(
+    1,
+    "Slippage must be at least 1 basis point",
+  )
+    .max(10000, "Slippage cannot exceed 10000 basis points (100%)")
+    .optional(),
 }).refine(
   (data) =>
     (data.sellAmountSol !== undefined) !== (data.sellAmountSPL !== undefined),

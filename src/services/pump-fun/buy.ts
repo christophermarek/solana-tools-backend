@@ -13,6 +13,7 @@ export async function buy(
   buyer: Keypair,
   mint: Keypair,
   buyAmountSol: number,
+  slippageBps?: number,
 ): Promise<
   [{
     transactionResult: VersionedTransactionResponse;
@@ -34,13 +35,16 @@ export async function buy(
 
     const buyAmountLamports = BigInt(solanaService.solToLamports(buyAmountSol));
     const priorityFee = getPriorityFee();
+    const slippage = slippageBps !== undefined
+      ? BigInt(slippageBps)
+      : SLIPPAGE_BPS;
 
     logging.info(TAG, "Buy parameters", {
       buyer: buyer.publicKey.toString(),
       mint: mint.publicKey.toString(),
       buyAmountSol,
       buyAmountLamports: buyAmountLamports.toString(),
-      slippageBps: SLIPPAGE_BPS.toString(),
+      slippageBps: slippage.toString(),
       priorityFee,
     });
 
@@ -48,7 +52,7 @@ export async function buy(
       buyer,
       mint.publicKey,
       buyAmountLamports,
-      SLIPPAGE_BPS,
+      slippage,
       priorityFee,
     );
 
@@ -83,7 +87,7 @@ export async function buy(
       sender_public_key: buyer.publicKey.toString(),
       status: TransactionStatus.PENDING,
       slot: res.results.slot,
-      slippage_bps: Number(SLIPPAGE_BPS),
+      slippage_bps: Number(slippage),
       priority_fee_unit_limit: priorityFee.unitLimit,
       priority_fee_unit_price_lamports: priorityFee.unitPrice,
     });

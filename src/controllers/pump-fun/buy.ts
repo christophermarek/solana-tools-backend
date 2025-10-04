@@ -27,7 +27,8 @@ export const buyToken: RouterMiddleware<
   logging.info(requestId, "Buying token");
 
   try {
-    const { walletId, mintPublicKey, buyAmountSol } = ctx.state.bodyData;
+    const { walletId, mintPublicKey, buyAmountSol, slippageBps } =
+      ctx.state.bodyData;
 
     const [validation, validationError] = await validateWalletAndGetKeypair(
       walletId,
@@ -50,7 +51,12 @@ export const buyToken: RouterMiddleware<
     const mintPublicKeyObj = new PublicKey(mintPublicKey);
     const mintKeypair = { publicKey: mintPublicKeyObj } as Keypair;
 
-    const [result, buyError] = await buy(keypair, mintKeypair, buyAmountSol);
+    const [result, buyError] = await buy(
+      keypair,
+      mintKeypair,
+      buyAmountSol,
+      slippageBps,
+    );
 
     if (buyError) {
       const errorMessage = typeof buyError === "string"
