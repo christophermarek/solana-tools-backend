@@ -14,6 +14,7 @@ import { TransactionStatus } from "../../db/repositories/transactions.ts";
 import { getSPLBalance } from "./get-spl-balance.ts";
 import * as pumpfunMintsRepo from "../../db/repositories/pumpfun-mints.ts";
 import { parseSolanaErrorLogs } from "../solana/_constants.ts";
+import { PumpFunTransactionType } from "../../db/repositories/bot-execution-transactions.ts";
 
 export async function createAndBuy(
   creator: Keypair,
@@ -22,6 +23,7 @@ export async function createAndBuy(
   telegramUserId: string,
   slippageBps?: number,
   priorityFeeOverride?: { unitLimit: number; unitPrice: number },
+  botExecutionId?: number,
 ): Promise<
   [{
     transactionResult: VersionedTransactionResponse;
@@ -124,6 +126,9 @@ export async function createAndBuy(
       return [null, PUMP_FUN_ERRORS.ERROR_NO_RESULTS_CREATE_AND_BUY];
     }
 
+    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
+    const transactionFeeSol = solanaService.lamportsToSol(transactionFee);
+
     const transaction = await transactionRepo.create({
       signature: res.signature,
       sender_public_key: creator.publicKey.toString(),
@@ -132,6 +137,11 @@ export async function createAndBuy(
       slippage_bps: Number(slippage),
       priority_fee_unit_limit: priorityFee.unitLimit,
       priority_fee_unit_price_lamports: priorityFee.unitPrice,
+      transaction_fee_sol: transactionFeeSol,
+      bot_execution_id: botExecutionId,
+      pump_fun_transaction_type: botExecutionId
+        ? PumpFunTransactionType.CREATE_AND_BUY
+        : undefined,
     });
     transactionId = transaction.id;
 
@@ -162,9 +172,7 @@ export async function createAndBuy(
 
     const amountBought = balanceError ? 0 : finalBalance;
 
-    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
-    const totalSolSpent = buyAmountSol +
-      solanaService.lamportsToSol(transactionFee);
+    const totalSolSpent = buyAmountSol + transactionFeeSol;
 
     if (transactionId) {
       await transactionRepo.update(transactionId, {

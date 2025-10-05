@@ -29,6 +29,7 @@ export const executeCycle: BotCycleExecutor<
     mint,
     volumeAmountSol,
     blocksToWaitBeforeSell,
+    botExecutionId,
   } = params;
 
   logging.info(TAG, "Volume bot 1 cycle started", {
@@ -59,6 +60,8 @@ export const executeCycle: BotCycleExecutor<
       wallet,
       mint,
       volumeAmountSol,
+      undefined,
+      botExecutionId,
     );
 
     if (buyError) {
@@ -117,7 +120,7 @@ export const executeCycle: BotCycleExecutor<
 
     const [sellResult, sellError] = await pumpFunService.sell(wallet, mint, {
       sellAmountSol: volumeAmountSol,
-    });
+    }, botExecutionId);
 
     if (sellError) {
       const errorMsg = createBotError(

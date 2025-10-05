@@ -12,6 +12,7 @@ export interface VolumeBot1CycleParams {
   mint: Keypair;
   volumeAmountSol: number;
   blocksToWaitBeforeSell: number;
+  botExecutionId?: number;
 }
 
 export interface VolumeBot1Metrics {

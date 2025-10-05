@@ -15,6 +15,7 @@ export interface DbBotExecution {
   bot_type: string;
   bot_params: string;
   wallet_id: number;
+  owner_user_id: string;
   status: BotExecutionStatus;
   total_cycles: number;
   successful_cycles: number;
@@ -32,6 +33,7 @@ export interface CreateBotExecutionParams {
   bot_type: string;
   bot_params: string;
   wallet_id: number;
+  owner_user_id: string;
 }
 
 export interface UpdateBotExecutionParams {
@@ -57,25 +59,28 @@ export async function create(
         bot_type,
         bot_params,
         wallet_id,
+        owner_user_id,
         status
-      ) VALUES (?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?)
     `);
 
     await stmt.run(
       params.bot_type,
       params.bot_params,
       params.wallet_id,
+      params.owner_user_id,
       BotExecutionStatus.PENDING,
     );
 
     const newExecution = await client.prepare(`
       SELECT * FROM bot_executions 
-      WHERE wallet_id = ? AND bot_type = ? AND status = ?
+      WHERE wallet_id = ? AND bot_type = ? AND owner_user_id = ? AND status = ?
       ORDER BY created_at DESC 
       LIMIT 1
     `).get(
       params.wallet_id,
       params.bot_type,
+      params.owner_user_id,
       BotExecutionStatus.PENDING,
     ) as DbBotExecution;
 
@@ -83,6 +88,7 @@ export async function create(
       id: newExecution.id,
       botType: newExecution.bot_type,
       walletId: newExecution.wallet_id,
+      ownerUserId: newExecution.owner_user_id,
     });
 
     return newExecution;
@@ -94,18 +100,19 @@ export async function create(
 
 export async function findById(
   id: number,
+  ownerUserId: string,
   requestId: string = "system",
 ): Promise<DbBotExecution | null> {
   const client = getClient();
   try {
     const result = await client.prepare(`
-      SELECT * FROM bot_executions WHERE id = ?
-    `).get(id) as DbBotExecution | undefined;
+      SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?
+    `).get(id, ownerUserId) as DbBotExecution | undefined;
     return result || null;
   } catch (error) {
     logging.error(
       requestId,
-      `Failed to find bot execution with id ${id}`,
+      `Failed to find bot execution with id ${id} for owner ${ownerUserId}`,
       error,
     );
     throw error;
@@ -115,6 +122,7 @@ export async function findById(
 export async function update(
   id: number,
   params: UpdateBotExecutionParams,
+  ownerUserId: string,
   requestId: string = "system",
 ): Promise<DbBotExecution> {
   const client = getClient();
@@ -168,19 +176,19 @@ export async function update(
     }
 
     updates.push("updated_at = CURRENT_TIMESTAMP");
-    values.push(id);
+    values.push(id, ownerUserId);
 
     const sqlQuery = `
       UPDATE bot_executions 
       SET ${updates.join(", ")}
-      WHERE id = ?
+      WHERE id = ? AND owner_user_id = ?
     `;
 
     await client.prepare(sqlQuery).run(...values);
 
     const result = await client.prepare(`
-      SELECT * FROM bot_executions WHERE id = ?
-    `).get(id) as DbBotExecution | undefined;
+      SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?
+    `).get(id, ownerUserId) as DbBotExecution | undefined;
 
     if (!result) {
       throw new Error(`Bot execution with id ${id} not found after update`);
@@ -189,13 +197,14 @@ export async function update(
     logging.info(requestId, "Updated bot execution", {
       id,
       status: result.status,
+      ownerUserId,
     });
 
     return result;
   } catch (error) {
     logging.error(
       requestId,
-      `Failed to update bot execution with id ${id}`,
+      `Failed to update bot execution with id ${id} for owner ${ownerUserId}`,
       error,
     );
     throw error;
@@ -226,20 +235,21 @@ export async function listByStatus(
 
 export async function listByWalletId(
   walletId: number,
+  ownerUserId: string,
   requestId: string = "system",
 ): Promise<DbBotExecution[]> {
   const client = getClient();
   try {
     const result = await client.prepare(`
       SELECT * FROM bot_executions 
-      WHERE wallet_id = ? 
+      WHERE wallet_id = ? AND owner_user_id = ?
       ORDER BY created_at DESC
-    `).all(walletId) as DbBotExecution[];
+    `).all(walletId, ownerUserId) as DbBotExecution[];
     return result;
   } catch (error) {
     logging.error(
       requestId,
-      `Failed to list bot executions for wallet ${walletId}`,
+      `Failed to list bot executions for wallet ${walletId} and owner ${ownerUserId}`,
       error,
     );
     throw error;
@@ -247,6 +257,7 @@ export async function listByWalletId(
 }
 
 export async function listRecent(
+  ownerUserId: string,
   limit: number = 50,
   requestId: string = "system",
 ): Promise<DbBotExecution[]> {
@@ -254,9 +265,10 @@ export async function listRecent(
   try {
     const result = await client.prepare(`
       SELECT * FROM bot_executions 
+      WHERE owner_user_id = ?
       ORDER BY created_at DESC 
       LIMIT ?
-    `).all(limit) as DbBotExecution[];
+    `).all(ownerUserId, limit) as DbBotExecution[];
     return result;
   } catch (error) {
     logging.error(requestId, "Failed to list recent bot executions", error);

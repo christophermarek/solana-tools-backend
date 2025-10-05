@@ -11,6 +11,7 @@ import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { TransactionStatus } from "../../db/repositories/transactions.ts";
 import { getSPLBalance } from "./get-spl-balance.ts";
 import { parseSolanaErrorLogs } from "../solana/_constants.ts";
+import { PumpFunTransactionType } from "../../db/repositories/bot-execution-transactions.ts";
 
 export interface SellTokenParams {
   sellAmountSol?: number;
@@ -22,6 +23,7 @@ export async function sell(
   seller: Keypair,
   mint: Keypair,
   params: SellTokenParams,
+  botExecutionId?: number,
 ): Promise<
   [{
     transactionResult: VersionedTransactionResponse;
@@ -165,6 +167,9 @@ export async function sell(
       return [null, { type: "SDK_ERROR", message: errorMsg } as SDKError];
     }
 
+    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
+    const transactionFeeSol = solanaService.lamportsToSol(transactionFee);
+
     const transaction = await transactionRepo.create({
       signature,
       sender_public_key: seller.publicKey.toString(),
@@ -173,6 +178,11 @@ export async function sell(
       slippage_bps: Number(slippage),
       priority_fee_unit_limit: priorityFee.unitLimit,
       priority_fee_unit_price_lamports: priorityFee.unitPrice,
+      transaction_fee_sol: transactionFeeSol,
+      bot_execution_id: botExecutionId,
+      pump_fun_transaction_type: botExecutionId
+        ? PumpFunTransactionType.SELL
+        : undefined,
     });
     transactionId = transaction.id;
 
@@ -274,8 +284,6 @@ export async function sell(
       ? solanaService.lamportsToSol(postBalances[0] - preBalances[0])
       : 0;
 
-    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
-    const transactionFeeSol = solanaService.lamportsToSol(transactionFee);
     const totalSolReceived = solReceived - transactionFeeSol;
 
     logging.info(TAG, "Sell operation completed", {

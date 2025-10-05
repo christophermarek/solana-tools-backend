@@ -90,7 +90,7 @@ export async function executeBot(
 ): Promise<
   [BotExecutorResult<Record<string, unknown>>, null] | [null, BotErrors]
 > {
-  const { botType, botParams, executionConfig } = config;
+  const { botType, botParams, executionConfig, botExecutionId } = config;
   const { repeatCount, intervalSeconds } = executionConfig;
 
   const startTime = Date.now();
@@ -132,6 +132,10 @@ export async function executeBot(
       });
 
       const cycleParams = bot.prepareCycleParams(botParams, i);
+      if (botExecutionId) {
+        (cycleParams as Record<string, unknown>).botExecutionId =
+          botExecutionId;
+      }
       const [cycleResult, cycleError] = await bot.executeCycle(cycleParams);
 
       if (cycleError) {

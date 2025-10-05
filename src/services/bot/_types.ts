@@ -9,6 +9,7 @@ export interface BotExecutorConfig<TBotParams> {
     repeatCount: number;
     intervalSeconds: number;
   };
+  botExecutionId?: number;
 }
 
 export interface BotExecutorResult<TBotResults = Record<string, never>> {
@@ -55,4 +56,23 @@ export interface Bot<
   prepareCycleParams: BotCyclePreparator<TBotParams, TBotCycleParams>;
   executeCycle: BotCycleExecutor<TBotCycleParams, TBotCycleResult>;
   aggregateResults: BotResultAggregator<TBotCycleResult, TBotResults>;
+}
+
+export interface BotExecutionTransaction {
+  id: number;
+  signature: string | null;
+  senderPublicKey: string;
+  status: string;
+  slot: number | null;
+  priorityFeeUnitLimit: number | null;
+  priorityFeeUnitPriceLamports: number | null;
+  slippageBps: number | null;
+  confirmedAt: string | null;
+  confirmationSlot: number | null;
+  commitmentLevel: string | null;
+  errorMessage: string | null;
+  transactionFeeSol: number | null;
+  createdAt: string;
+  updatedAt: string;
+  pumpFunTransactionType: string | null;
 }

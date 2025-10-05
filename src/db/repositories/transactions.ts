@@ -1,6 +1,8 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 import type { BindValue } from "../types.ts";
+import * as botExecutionTransactionRepo from "./bot-execution-transactions.ts";
+import { PumpFunTransactionType } from "./bot-execution-transactions.ts";
 
 export enum TransactionStatus {
   PENDING = "PENDING",
@@ -22,6 +24,7 @@ export interface DbTransaction {
   confirmation_slot?: number;
   commitment_level?: string;
   error_message?: string;
+  transaction_fee_sol?: number;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +42,9 @@ export interface CreateTransactionParams {
   confirmation_slot?: number;
   commitment_level?: string;
   error_message?: string;
+  transaction_fee_sol?: number;
+  bot_execution_id?: number;
+  pump_fun_transaction_type?: PumpFunTransactionType;
 }
 
 export interface UpdateTransactionParams {
@@ -73,8 +79,9 @@ export async function create(
         confirmed_at,
         confirmation_slot,
         commitment_level,
-        error_message
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        error_message,
+        transaction_fee_sol
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     await stmt.run(
@@ -90,11 +97,28 @@ export async function create(
       params.confirmation_slot || null,
       params.commitment_level || null,
       params.error_message || null,
+      params.transaction_fee_sol || null,
     );
 
     const newTransaction = await client.prepare(`
       SELECT * FROM transactions WHERE id = last_insert_rowid()
     `).get() as DbTransaction;
+
+    if (params.bot_execution_id && params.pump_fun_transaction_type) {
+      try {
+        await botExecutionTransactionRepo.create({
+          bot_execution_id: params.bot_execution_id,
+          transaction_id: newTransaction.id,
+          pump_fun_transaction_type: params.pump_fun_transaction_type,
+        });
+      } catch (error) {
+        logging.warn(
+          requestId,
+          "Failed to create bot execution transaction record",
+          error,
+        );
+      }
+    }
 
     return newTransaction;
   } catch (error) {
@@ -192,7 +216,28 @@ export async function update(
   }
 }
 
+export async function findById(
+  id: number,
+  requestId: string = "system",
+): Promise<DbTransaction | null> {
+  const client = getClient();
+  try {
+    const result = await client.prepare(`
+      SELECT * FROM transactions WHERE id = ?
+    `).get(id) as DbTransaction | undefined;
+    return result || null;
+  } catch (error) {
+    logging.error(
+      requestId,
+      `Failed to find transaction with id ${id}`,
+      error,
+    );
+    throw error;
+  }
+}
+
 export default {
   create,
   update,
+  findById,
 };

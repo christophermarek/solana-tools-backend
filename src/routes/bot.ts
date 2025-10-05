@@ -7,10 +7,13 @@ import {
   listBotExecutions,
   listBots,
 } from "../controllers/bot/index.ts";
+import { createAuthenticateTelegramUserMiddleware } from "../middleware/authenticate-telegram-user.ts";
 
 const router = new Router({
   prefix: "/api/v1/bots",
 });
+
+router.use(createAuthenticateTelegramUserMiddleware());
 
 router.get("/", listBots);
 

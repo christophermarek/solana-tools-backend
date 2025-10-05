@@ -1,7 +1,7 @@
 import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import { ExecuteBotPayload } from "./_dto.ts";
+import { ExecuteBotPayload, ExecuteBotResponse } from "./_dto.ts";
 import { BotType } from "../../services/bot/_types.ts";
 import * as botExecuteService from "../../services/bot/execute.ts";
 import {
@@ -74,11 +74,13 @@ export const executeBot: RouterMiddleware<
       walletId: parameters.walletId,
     });
 
-    ResponseUtil.success(ctx, {
+    const response: ExecuteBotResponse = {
       executionId: executionId!,
       status: "PENDING",
       message: "Bot execution started. Use the execution ID to check status.",
-    });
+    };
+
+    ResponseUtil.success(ctx, response);
 
     logging.debug(requestId, "Response body", ctx.response.body);
   } catch (error) {
