@@ -72,6 +72,7 @@ export const executeCycle: BotCycleExecutor<
         ),
       );
       result.buyError = errorMsg;
+      result.error = errorMsg;
       return [result, null];
     }
 
@@ -81,6 +82,7 @@ export const executeCycle: BotCycleExecutor<
         new Error("No result from buy operation"),
       );
       result.buyError = errorMsg;
+      result.error = errorMsg;
       return [result, null];
     }
 
@@ -106,6 +108,7 @@ export const executeCycle: BotCycleExecutor<
           new Error(blockWaitError),
         );
         result.sellError = errorMsg;
+        result.error = errorMsg;
         return [result, null];
       }
 
@@ -130,6 +133,7 @@ export const executeCycle: BotCycleExecutor<
         ),
       );
       result.sellError = errorMsg;
+      result.error = errorMsg;
       return [result, null];
     }
 
@@ -139,6 +143,7 @@ export const executeCycle: BotCycleExecutor<
         new Error("No result from sell operation"),
       );
       result.sellError = errorMsg;
+      result.error = errorMsg;
       return [result, null];
     }
 
@@ -181,6 +186,7 @@ export const executeCycle: BotCycleExecutor<
       error as Error,
     );
     result.buyError = errorMessage;
+    result.error = errorMessage;
     return [result, null];
   }
 };

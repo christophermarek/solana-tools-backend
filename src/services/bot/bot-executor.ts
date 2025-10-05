@@ -16,6 +16,7 @@ import {
   VolumeBot1CycleResult,
   VolumeBot1Params,
 } from "./bot1/_types.ts";
+import * as botExecutionRepo from "../../db/repositories/bot-executions.ts";
 
 type BotRegistryEntry = {
   type: "volume-bot-1";
@@ -90,7 +91,14 @@ export async function executeBot(
 ): Promise<
   [BotExecutorResult<Record<string, unknown>>, null] | [null, BotErrors]
 > {
-  const { botType, botParams, executionConfig, botExecutionId } = config;
+  const {
+    botType,
+    botParams,
+    executionConfig,
+    botExecutionId,
+    ownerUserId,
+    requestId,
+  } = config;
   const { repeatCount, intervalSeconds } = executionConfig;
 
   const startTime = Date.now();
@@ -123,6 +131,30 @@ export async function executeBot(
 
   const cycleResults: BotCycleResult<Record<string, unknown>>[] = [];
 
+  const updateProgress = async (
+    currentCycle: number,
+    successfulCycles: number,
+    failedCycles: number,
+  ) => {
+    if (botExecutionId && ownerUserId) {
+      try {
+        await botExecutionRepo.update(
+          botExecutionId,
+          {
+            total_cycles: currentCycle,
+            successful_cycles: successfulCycles,
+            failed_cycles: failedCycles,
+            execution_time_ms: Date.now() - startTime,
+          },
+          ownerUserId,
+          requestId || "bot-executor",
+        );
+      } catch (error) {
+        logging.warn(TAG, "Failed to update bot execution progress", error);
+      }
+    }
+  };
+
   try {
     for (let i = 0; i < repeatCount; i++) {
       logging.info(TAG, "Starting cycle", {
@@ -144,6 +176,11 @@ export async function executeBot(
         result.errors.push(errorMsg);
         result.failedCycles++;
         result.success = false;
+        await updateProgress(
+          i + 1,
+          result.successfulCycles,
+          result.failedCycles,
+        );
         continue;
       }
 
@@ -167,6 +204,8 @@ export async function executeBot(
           result.errors.push(errorMsg);
         }
       }
+
+      await updateProgress(i + 1, result.successfulCycles, result.failedCycles);
 
       if (i < repeatCount - 1 && intervalSeconds > 0) {
         logging.info(TAG, "Waiting for interval before next cycle", {

@@ -127,6 +127,8 @@ async function executeAsync(
       botParams,
       executionConfig: parameters.executionConfig,
       botExecutionId: executionId,
+      ownerUserId,
+      requestId,
     });
 
     const executionTime = Date.now() - startTime;

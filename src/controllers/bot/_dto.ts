@@ -29,8 +29,8 @@ export const executeBotSchema = z.object({
     executionConfig: z.object({
       repeatCount: z.number().int().positive("Repeat count must be positive")
         .max(
-          100,
-          "Cannot repeat more than 100 times",
+          3000,
+          "Cannot repeat more than 3000 times",
         ),
       intervalSeconds: z.number().int().min(0, "Interval must be non-negative")
         .max(

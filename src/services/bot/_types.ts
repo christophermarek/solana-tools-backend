@@ -10,6 +10,8 @@ export interface BotExecutorConfig<TBotParams> {
     intervalSeconds: number;
   };
   botExecutionId?: number;
+  ownerUserId?: string;
+  requestId?: string;
 }
 
 export interface BotExecutorResult<TBotResults = Record<string, never>> {
