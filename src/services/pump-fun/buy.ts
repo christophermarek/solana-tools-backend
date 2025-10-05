@@ -8,6 +8,8 @@ import { getPriorityFee, SLIPPAGE_BPS, TAG } from "./_constants.ts";
 import { PUMP_FUN_ERRORS } from "./_errors.ts";
 import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { TransactionStatus } from "../../db/repositories/transactions.ts";
+import { getSPLBalance } from "./get-spl-balance.ts";
+import { parseSolanaErrorLogs } from "../solana/_constants.ts";
 
 export async function buy(
   buyer: Keypair,
@@ -19,6 +21,9 @@ export async function buy(
     transactionResult: VersionedTransactionResponse;
     curve: BondingCurveAccount;
     signature: string;
+    amountBought: number;
+    totalSolSpent: number;
+    transactionFee: number;
   }, null] | [null, PumpFunErrors]
 > {
   logging.info(TAG, "Buying token");
@@ -29,6 +34,19 @@ export async function buy(
 
     if (error) {
       return [null, error];
+    }
+
+    const [initialBalance, initialBalanceError] = await getSPLBalance(
+      buyer.publicKey,
+      mint.publicKey,
+    );
+
+    if (initialBalanceError) {
+      logging.warn(
+        TAG,
+        "Failed to get initial SPL balance",
+        initialBalanceError,
+      );
     }
 
     logging.info(TAG, "Mint: ", mint.publicKey.toString());
@@ -58,12 +76,17 @@ export async function buy(
 
     if (!res.success) {
       const errorMessage = res.error as string;
+      const cleanErrorMessage = parseSolanaErrorLogs(errorMessage);
+
       logging.error(
         TAG,
         "Failed to buy token",
-        new Error(errorMessage),
+        new Error(cleanErrorMessage),
       );
-      return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
+      return [
+        null,
+        { type: "SDK_ERROR", message: cleanErrorMessage } as SDKError,
+      ];
     }
 
     if (!res.results) {
@@ -166,9 +189,29 @@ export async function buy(
       return [null, PUMP_FUN_ERRORS.ERROR_NO_CURVE_AFTER_BUY];
     }
 
+    const [finalBalance, balanceError] = await getSPLBalance(
+      buyer.publicKey,
+      mint.publicKey,
+    );
+
+    if (balanceError) {
+      logging.warn(TAG, "Failed to get final SPL balance", balanceError);
+    }
+
+    const amountBought = initialBalanceError || balanceError
+      ? 0
+      : (finalBalance - initialBalance);
+
+    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
+    const transactionFeeSol = solanaService.lamportsToSol(transactionFee);
+    const totalSolSpent = buyAmountSol + transactionFeeSol;
+
     logging.info(TAG, "Buy operation completed", {
       signature,
       curveExists: !!curve,
+      amountBought,
+      totalSolSpent,
+      transactionFee: transactionFeeSol,
     });
 
     return [
@@ -176,6 +219,9 @@ export async function buy(
         transactionResult: res.results,
         curve,
         signature,
+        amountBought,
+        totalSolSpent,
+        transactionFee: transactionFeeSol,
       },
       null,
     ];

@@ -72,19 +72,26 @@ export const sellToken: RouterMiddleware<
     }
 
     const responseData = {
-      transaction: result!.transactionResult,
+      signature: result!.signature,
       curve: {
         virtualSolReserves: result!.curve.virtualSolReserves.toString(),
         virtualTokenReserves: result!.curve.virtualTokenReserves.toString(),
         realSolReserves: result!.curve.realSolReserves.toString(),
         realTokenReserves: result!.curve.realTokenReserves.toString(),
       },
+      amountSold: result!.amountSold,
+      totalSolReceived: result!.totalSolReceived,
+      transactionFee: result!.transactionFee,
     };
 
     logging.info(requestId, "Token sold successfully", {
       mint: mintPublicKey,
+      signature: result!.signature,
       sellType: sellAmountSol !== undefined ? "SOL value" : "SPL tokens",
       sellAmount: sellAmountSol !== undefined ? sellAmountSol : sellAmountSPL,
+      amountSold: result!.amountSold,
+      totalSolReceived: result!.totalSolReceived,
+      transactionFee: result!.transactionFee,
     });
 
     ResponseUtil.success(ctx, responseData);

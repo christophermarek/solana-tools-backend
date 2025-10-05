@@ -13,6 +13,7 @@ import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { TransactionStatus } from "../../db/repositories/transactions.ts";
 import { getSPLBalance } from "./get-spl-balance.ts";
 import * as pumpfunMintsRepo from "../../db/repositories/pumpfun-mints.ts";
+import { parseSolanaErrorLogs } from "../solana/_constants.ts";
 
 export async function createAndBuy(
   creator: Keypair,
@@ -74,11 +75,13 @@ export async function createAndBuy(
       priorityFee,
     );
     if (!res.success) {
-      const errorMessage = typeof res.error === "string"
+      let errorMessage = typeof res.error === "string"
         ? res.error
         : (res.error instanceof Error
           ? res.error.message
           : JSON.stringify(res.error)) || "Unknown error";
+
+      errorMessage = parseSolanaErrorLogs(errorMessage);
 
       logging.error(
         TAG,

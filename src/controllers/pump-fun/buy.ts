@@ -72,17 +72,24 @@ export const buyToken: RouterMiddleware<
     }
 
     const responseData = {
-      transaction: result!.transactionResult,
+      signature: result!.signature,
       curve: {
         virtualSolReserves: result!.curve.virtualSolReserves.toString(),
         virtualTokenReserves: result!.curve.virtualTokenReserves.toString(),
         realSolReserves: result!.curve.realSolReserves.toString(),
         realTokenReserves: result!.curve.realTokenReserves.toString(),
       },
+      amountBought: result!.amountBought,
+      totalSolSpent: result!.totalSolSpent,
+      transactionFee: result!.transactionFee,
     };
 
     logging.info(requestId, "Token bought successfully", {
       mint: mintPublicKey,
+      signature: result!.signature,
+      amountBought: result!.amountBought,
+      totalSolSpent: result!.totalSolSpent,
+      transactionFee: result!.transactionFee,
     });
 
     ResponseUtil.success(ctx, responseData);

@@ -1,30 +1,60 @@
-const TAG = "solana-service";
+export const SOLANA_ERROR_MESSAGES = {
+  TOO_LITTLE_SOL_RECEIVED:
+    "Slippage too low. Try increasing slippage or reducing trade size. Price impact may be too high.",
+  INSUFFICIENT_FUNDS:
+    "Insufficient funds for this transaction. Please check your wallet balance.",
+  TRANSACTION_FAILED:
+    "Transaction failed. Please try again with different parameters.",
+  SLIPPAGE_EXCEEDED:
+    "Slippage tolerance exceeded. Try increasing slippage or reducing trade size.",
+  INVALID_AMOUNT: "Invalid amount specified. Please check your input values.",
+} as const;
 
-const DEFAULT_RPC_TIMEOUT_MS = 30000;
-const DEFAULT_RPC_REQUESTS_PER_SECOND = 5;
+export type SolanaErrorMessage =
+  typeof SOLANA_ERROR_MESSAGES[keyof typeof SOLANA_ERROR_MESSAGES];
 
-const MAX_RETRY_ATTEMPTS = 3;
-const RETRY_DELAY_MS = 1000;
+export function parseSolanaErrorLogs(
+  errorMessage: string | Error | object,
+): string {
+  let errorString: string;
+  if (typeof errorMessage === "string") {
+    errorString = errorMessage;
+  } else if (errorMessage instanceof Error) {
+    errorString = errorMessage.message;
+  } else {
+    errorString = JSON.stringify(errorMessage);
+  }
 
-const MAX_BLOCKS_TO_WAIT = 100;
+  let cleanErrorMessage = errorString;
 
-const LAMPORTS_PER_SOL = 1_000_000_000;
+  if (errorString.includes("TooLittleSolReceived")) {
+    cleanErrorMessage = SOLANA_ERROR_MESSAGES.TOO_LITTLE_SOL_RECEIVED;
+  } else if (
+    errorString.includes("insufficient lamports") ||
+    errorString.includes("insufficient funds")
+  ) {
+    cleanErrorMessage = SOLANA_ERROR_MESSAGES.INSUFFICIENT_FUNDS;
+  } else if (errorString.includes("slippage")) {
+    cleanErrorMessage = SOLANA_ERROR_MESSAGES.SLIPPAGE_EXCEEDED;
+  } else if (errorString.includes("custom program error")) {
+    const logMatch = errorString.match(/Error Message: ([^.]+)\./);
+    if (logMatch) {
+      cleanErrorMessage = logMatch[1];
+    }
+  }
 
-const COMMITMENT_LEVEL = "confirmed";
+  return cleanErrorMessage;
+}
 
-const WELL_KNOWN_ADDRESSES = {
+export const TAG = "solana-service";
+export const DEFAULT_RPC_TIMEOUT_MS = 30000;
+export const DEFAULT_RPC_REQUESTS_PER_SECOND = 5;
+export const MAX_RETRY_ATTEMPTS = 3;
+export const RETRY_DELAY_MS = 1000;
+export const MAX_BLOCKS_TO_WAIT = 100;
+export const LAMPORTS_PER_SOL = 1_000_000_000;
+export const COMMITMENT_LEVEL = "confirmed";
+export const WELL_KNOWN_ADDRESSES = {
   SYSTEM_PROGRAM: "11111111111111111111111111111111",
   NATIVE_MINT: "So11111111111111111111111111111111111111112",
 } as const;
-
-export {
-  COMMITMENT_LEVEL,
-  DEFAULT_RPC_REQUESTS_PER_SECOND,
-  DEFAULT_RPC_TIMEOUT_MS,
-  LAMPORTS_PER_SOL,
-  MAX_BLOCKS_TO_WAIT,
-  MAX_RETRY_ATTEMPTS,
-  RETRY_DELAY_MS,
-  TAG,
-  WELL_KNOWN_ADDRESSES,
-};

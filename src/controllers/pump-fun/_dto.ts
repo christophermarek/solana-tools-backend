@@ -92,7 +92,10 @@ export const sellTokenSchema = z.object({
     1000,
     "Sell amount cannot exceed 1000 SOL",
   ).optional(),
-  sellAmountSPL: z.number().positive("Sell amount must be positive").max(
+  sellAmountSPL: z.number().int().min(
+    -1,
+    "Sell amount must be -1 (all tokens) or positive",
+  ).max(
     1000000000,
     "Sell amount cannot exceed 1 billion tokens",
   ).optional(),

@@ -9,6 +9,8 @@ import { PUMP_FUN_ERRORS } from "./_errors.ts";
 import { SolanaErrors } from "../solana/_errors.ts";
 import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { TransactionStatus } from "../../db/repositories/transactions.ts";
+import { getSPLBalance } from "./get-spl-balance.ts";
+import { parseSolanaErrorLogs } from "../solana/_constants.ts";
 
 export interface SellTokenParams {
   sellAmountSol?: number;
@@ -25,6 +27,9 @@ export async function sell(
     transactionResult: VersionedTransactionResponse;
     curve: BondingCurveAccount;
     signature: string;
+    amountSold: number;
+    totalSolReceived: number;
+    transactionFee: number;
   }, null] | [null, PumpFunErrors | SolanaErrors]
 > {
   logging.info(TAG, "Selling token", params);
@@ -34,6 +39,19 @@ export async function sell(
     const [sdk, error] = getSDK(seller);
     if (error) {
       return [null, error];
+    }
+
+    const [initialBalance, initialBalanceError] = await getSPLBalance(
+      seller.publicKey,
+      mint.publicKey,
+    );
+
+    if (initialBalanceError) {
+      logging.warn(
+        TAG,
+        "Failed to get initial SPL balance",
+        initialBalanceError,
+      );
     }
 
     let sellAmountLamports: bigint;
@@ -47,9 +65,29 @@ export async function sell(
       sellType = "SOL value";
       sellAmount = params.sellAmountSol;
     } else if (params.sellAmountSPL !== undefined) {
-      sellAmountLamports = BigInt(params.sellAmountSPL);
-      sellType = "SPL tokens";
-      sellAmount = params.sellAmountSPL;
+      if (params.sellAmountSPL === -1) {
+        if (initialBalanceError || initialBalance === null) {
+          logging.error(
+            TAG,
+            "Cannot sell all tokens: failed to get initial balance",
+            new Error("Invalid sell parameters"),
+          );
+          return [
+            null,
+            {
+              type: "SDK_ERROR",
+              message: "Cannot sell all tokens: failed to get initial balance",
+            } as SDKError,
+          ];
+        }
+        sellAmountLamports = BigInt(initialBalance);
+        sellType = "All SPL tokens";
+        sellAmount = initialBalance;
+      } else {
+        sellAmountLamports = BigInt(params.sellAmountSPL);
+        sellType = "SPL tokens";
+        sellAmount = params.sellAmountSPL;
+      }
     } else {
       logging.error(
         TAG,
@@ -79,6 +117,7 @@ export async function sell(
       sellAmountLamports: sellAmountLamports.toString(),
       slippageBps: slippage.toString(),
       priorityFee,
+      initialBalance: initialBalanceError ? "error" : initialBalance,
     });
 
     const res = await sdk.trade.sell(
@@ -91,12 +130,17 @@ export async function sell(
 
     if (!res.success) {
       const errorMessage = res.error as string;
+      const cleanErrorMessage = parseSolanaErrorLogs(errorMessage);
+
       logging.error(
         TAG,
         "Failed to sell token",
-        new Error(errorMessage),
+        new Error(cleanErrorMessage),
       );
-      return [null, { type: "SDK_ERROR", message: errorMessage } as SDKError];
+      return [
+        null,
+        { type: "SDK_ERROR", message: cleanErrorMessage } as SDKError,
+      ];
     }
 
     if (!res.results) {
@@ -211,9 +255,35 @@ export async function sell(
       ];
     }
 
+    const [finalBalance, finalBalanceError] = await getSPLBalance(
+      seller.publicKey,
+      mint.publicKey,
+    );
+
+    if (finalBalanceError) {
+      logging.warn(TAG, "Failed to get final SPL balance", finalBalanceError);
+    }
+
+    const amountSold = initialBalanceError || finalBalanceError
+      ? sellAmount
+      : (initialBalance - (finalBalanceError ? 0 : finalBalance));
+
+    const preBalances = res.results.meta?.preBalances || [];
+    const postBalances = res.results.meta?.postBalances || [];
+    const solReceived = preBalances[0] && postBalances[0]
+      ? solanaService.lamportsToSol(postBalances[0] - preBalances[0])
+      : 0;
+
+    const transactionFee = res.results.meta?.fee ? res.results.meta.fee : 0;
+    const transactionFeeSol = solanaService.lamportsToSol(transactionFee);
+    const totalSolReceived = solReceived - transactionFeeSol;
+
     logging.info(TAG, "Sell operation completed", {
       signature,
       curveExists: !!curve,
+      amountSold,
+      totalSolReceived,
+      transactionFee: transactionFeeSol,
     });
 
     return [
@@ -221,6 +291,9 @@ export async function sell(
         transactionResult: res.results,
         curve,
         signature,
+        amountSold,
+        totalSolReceived,
+        transactionFee: transactionFeeSol,
       },
       null,
     ];
