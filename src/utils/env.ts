@@ -25,8 +25,6 @@ const envSchema = z.object({
 
   RPC_REQUESTS_PER_SECOND: z.coerce.number().positive().default(5),
 
-  DB_PATH: z.string().min(1, "Database path is required"),
-
   TEST_WALLET_PRIVATE_KEY: z.string().min(
     1,
     "Test wallet private key is required",
@@ -35,6 +33,9 @@ const envSchema = z.object({
   MAX_CONCURRENT_BOTS: z.coerce.number().positive().min(1),
 
   CLIENT_API_KEY: z.string().min(1, "Client API key is required"),
+
+  TURSO_DATABASE_URL: z.string().min(1, "Turso database URL is required"),
+  TURSO_AUTH_TOKEN: z.string().min(1, "Turso auth token is required"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -54,10 +55,11 @@ export async function loadEnv(envFile?: string): Promise<Env> {
       RPC_TIMEOUT_MS: Deno.env.get("RPC_TIMEOUT_MS"),
       HELIUS_RPC_URL: Deno.env.get("HELIUS_RPC_URL"),
       RPC_REQUESTS_PER_SECOND: Deno.env.get("RPC_REQUESTS_PER_SECOND"),
-      DB_PATH: Deno.env.get("DB_PATH"),
       TEST_WALLET_PRIVATE_KEY: Deno.env.get("TEST_WALLET_PRIVATE_KEY"),
       MAX_CONCURRENT_BOTS: Deno.env.get("MAX_CONCURRENT_BOTS"),
       CLIENT_API_KEY: Deno.env.get("CLIENT_API_KEY"),
+      TURSO_DATABASE_URL: Deno.env.get("TURSO_DATABASE_URL"),
+      TURSO_AUTH_TOKEN: Deno.env.get("TURSO_AUTH_TOKEN"),
     });
 
     config = env;
