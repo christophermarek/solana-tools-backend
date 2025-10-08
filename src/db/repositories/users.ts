@@ -15,10 +15,23 @@ export async function getUser(
 ): Promise<DbUser | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM users WHERE telegram_id = ?
-    `).get(telegramId) as DbUser | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM users WHERE telegram_id = ?",
+      args: [telegramId],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as string,
+      telegram_id: row.telegram_id as string,
+      role_id: row.role_id as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -37,19 +50,30 @@ export async function createUser(
   const client = getClient();
   try {
     const id = crypto.randomUUID();
-    const stmt = client.prepare(`
-      INSERT INTO users (
-        id,
-        telegram_id,
-        role_id
-      ) VALUES (?, ?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO users (
+          id,
+          telegram_id,
+          role_id
+        ) VALUES (?, ?, ?)
+      `,
+      args: [id, telegramId, roleId],
+    });
 
-    stmt.run(id, telegramId, roleId);
+    const result = await client.execute({
+      sql: "SELECT * FROM users WHERE id = ?",
+      args: [id],
+    });
 
-    const newUser = await client.prepare(`
-      SELECT * FROM users WHERE id = ?
-    `).get(id) as DbUser;
+    const row = result.rows[0];
+    const newUser: DbUser = {
+      id: row.id as string,
+      telegram_id: row.telegram_id as string,
+      role_id: row.role_id as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
 
     logging.info(
       requestId,

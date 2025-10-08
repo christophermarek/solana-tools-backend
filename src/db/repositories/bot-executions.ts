@@ -1,6 +1,5 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
-import type { BindValue } from "../types.ts";
 
 export enum BotExecutionStatus {
   PENDING = "PENDING",
@@ -54,35 +53,59 @@ export async function create(
 ): Promise<DbBotExecution> {
   const client = getClient();
   try {
-    const stmt = client.prepare(`
-      INSERT INTO bot_executions (
-        bot_type,
-        bot_params,
-        wallet_id,
-        owner_user_id,
-        status
-      ) VALUES (?, ?, ?, ?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO bot_executions (
+          bot_type,
+          bot_params,
+          wallet_id,
+          owner_user_id,
+          status
+        ) VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        params.bot_type,
+        params.bot_params,
+        params.wallet_id,
+        params.owner_user_id,
+        BotExecutionStatus.PENDING,
+      ],
+    });
 
-    await stmt.run(
-      params.bot_type,
-      params.bot_params,
-      params.wallet_id,
-      params.owner_user_id,
-      BotExecutionStatus.PENDING,
-    );
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_executions 
+        WHERE wallet_id = ? AND bot_type = ? AND owner_user_id = ? AND status = ?
+        ORDER BY created_at DESC 
+        LIMIT 1
+      `,
+      args: [
+        params.wallet_id,
+        params.bot_type,
+        params.owner_user_id,
+        BotExecutionStatus.PENDING,
+      ],
+    });
 
-    const newExecution = await client.prepare(`
-      SELECT * FROM bot_executions 
-      WHERE wallet_id = ? AND bot_type = ? AND owner_user_id = ? AND status = ?
-      ORDER BY created_at DESC 
-      LIMIT 1
-    `).get(
-      params.wallet_id,
-      params.bot_type,
-      params.owner_user_id,
-      BotExecutionStatus.PENDING,
-    ) as DbBotExecution;
+    const row = result.rows[0];
+    const newExecution: DbBotExecution = {
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    };
 
     logging.info(requestId, "Created bot execution", {
       id: newExecution.id,
@@ -105,10 +128,34 @@ export async function findById(
 ): Promise<DbBotExecution | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?
-    `).get(id, ownerUserId) as DbBotExecution | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?",
+      args: [id, ownerUserId],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -128,7 +175,7 @@ export async function update(
   const client = getClient();
   try {
     const updates: string[] = [];
-    const values: BindValue[] = [];
+    const values: (string | number | Date)[] = [];
 
     if (params.status !== undefined) {
       updates.push("status = ?");
@@ -184,23 +231,47 @@ export async function update(
       WHERE id = ? AND owner_user_id = ?
     `;
 
-    await client.prepare(sqlQuery).run(...values);
+    await client.execute({
+      sql: sqlQuery,
+      args: values,
+    });
 
-    const result = await client.prepare(`
-      SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?
-    `).get(id, ownerUserId) as DbBotExecution | undefined;
+    const result = await client.execute({
+      sql: "SELECT * FROM bot_executions WHERE id = ? AND owner_user_id = ?",
+      args: [id, ownerUserId],
+    });
 
-    if (!result) {
+    if (result.rows.length === 0) {
       throw new Error(`Bot execution with id ${id} not found after update`);
     }
 
+    const row = result.rows[0];
+    const updatedExecution: DbBotExecution = {
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    };
+
     logging.info(requestId, "Updated bot execution", {
       id,
-      status: result.status,
+      status: updatedExecution.status,
       ownerUserId,
     });
 
-    return result;
+    return updatedExecution;
   } catch (error) {
     logging.error(
       requestId,
@@ -217,12 +288,33 @@ export async function listByStatus(
 ): Promise<DbBotExecution[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_executions 
-      WHERE status = ? 
-      ORDER BY created_at DESC
-    `).all(status) as DbBotExecution[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_executions 
+        WHERE status = ? 
+        ORDER BY created_at DESC
+      `,
+      args: [status],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(
       requestId,
@@ -240,12 +332,33 @@ export async function listByWalletId(
 ): Promise<DbBotExecution[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_executions 
-      WHERE wallet_id = ? AND owner_user_id = ?
-      ORDER BY created_at DESC
-    `).all(walletId, ownerUserId) as DbBotExecution[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_executions 
+        WHERE wallet_id = ? AND owner_user_id = ?
+        ORDER BY created_at DESC
+      `,
+      args: [walletId, ownerUserId],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(
       requestId,
@@ -263,13 +376,34 @@ export async function listRecent(
 ): Promise<DbBotExecution[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_executions 
-      WHERE owner_user_id = ?
-      ORDER BY created_at DESC 
-      LIMIT ?
-    `).all(ownerUserId, limit) as DbBotExecution[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_executions 
+        WHERE owner_user_id = ?
+        ORDER BY created_at DESC 
+        LIMIT ?
+      `,
+      args: [ownerUserId, limit],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      bot_type: row.bot_type as string,
+      bot_params: row.bot_params as string,
+      wallet_id: row.wallet_id as number,
+      owner_user_id: row.owner_user_id as string,
+      status: row.status as BotExecutionStatus,
+      total_cycles: row.total_cycles as number,
+      successful_cycles: row.successful_cycles as number,
+      failed_cycles: row.failed_cycles as number,
+      execution_time_ms: row.execution_time_ms as number,
+      bot_specific_results: row.bot_specific_results as string | undefined,
+      errors: row.errors as string | undefined,
+      created_at: row.created_at as string,
+      started_at: row.started_at as string | undefined,
+      completed_at: row.completed_at as string | undefined,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(requestId, "Failed to list recent bot executions", error);
     throw error;
@@ -282,10 +416,13 @@ export async function countByStatus(
 ): Promise<number> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT COUNT(*) as count FROM bot_executions WHERE status = ?
-    `).get(status) as { count: number };
-    return result.count;
+    const result = await client.execute({
+      sql: "SELECT COUNT(*) as count FROM bot_executions WHERE status = ?",
+      args: [status],
+    });
+
+    const row = result.rows[0];
+    return row.count as number;
   } catch (error) {
     logging.error(
       requestId,
@@ -301,13 +438,16 @@ export async function countActiveExecutions(
 ): Promise<number> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT COUNT(*) as count FROM bot_executions 
-      WHERE status IN (?, ?)
-    `).get(BotExecutionStatus.PENDING, BotExecutionStatus.RUNNING) as {
-      count: number;
-    };
-    return result.count;
+    const result = await client.execute({
+      sql: `
+        SELECT COUNT(*) as count FROM bot_executions 
+        WHERE status IN (?, ?)
+      `,
+      args: [BotExecutionStatus.PENDING, BotExecutionStatus.RUNNING],
+    });
+
+    const row = result.rows[0];
+    return row.count as number;
   } catch (error) {
     logging.error(
       requestId,

@@ -2,7 +2,6 @@
   "tasks": {
     "start": " deno run --allow-all --unstable-sloppy-imports --no-check --import-map=import_map.json src/server.ts",
     "dev": " deno run --allow-all --watch --unstable-sloppy-imports --import-map=import_map.json src/server.ts",
-    "db:init": "mkdir -p data && echo -n > data/db.testnet.sqlite && echo -n > data/db.mainnet.sqlite && echo -n > data/db.devnet.sqlite",
     "lint": " deno lint src/",
     "lint:fix": " deno lint --fix src/",
     "lint:strict": " deno lint --rules=exclude=no-console,no-unused-vars src/services/",

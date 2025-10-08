@@ -1,8 +1,7 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
-import type { BindValue } from "../types.ts";
 import * as botExecutionTransactionRepo from "./bot-execution-transactions.ts";
-import { PumpFunTransactionType } from "./bot-execution-transactions.ts";
+import type { PumpFunTransactionType } from "./bot-execution-transactions.ts";
 
 export enum TransactionStatus {
   PENDING = "PENDING",
@@ -66,43 +65,68 @@ export async function create(
 ): Promise<DbTransaction> {
   const client = getClient();
   try {
-    const stmt = client.prepare(`
-      INSERT INTO transactions (
-        signature,
-        sender_wallet_id,
-        sender_public_key,
-        status,
-        slot,
-        priority_fee_unit_limit,
-        priority_fee_unit_price_lamports,
-        slippage_bps,
-        confirmed_at,
-        confirmation_slot,
-        commitment_level,
-        error_message,
-        transaction_fee_sol
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO transactions (
+          signature,
+          sender_wallet_id,
+          sender_public_key,
+          status,
+          slot,
+          priority_fee_unit_limit,
+          priority_fee_unit_price_lamports,
+          slippage_bps,
+          confirmed_at,
+          confirmation_slot,
+          commitment_level,
+          error_message,
+          transaction_fee_sol
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        params.signature || null,
+        params.sender_wallet_id || null,
+        params.sender_public_key,
+        params.status || TransactionStatus.PENDING,
+        params.slot || null,
+        params.priority_fee_unit_limit || null,
+        params.priority_fee_unit_price_lamports || null,
+        params.slippage_bps || null,
+        params.confirmed_at?.toISOString() || null,
+        params.confirmation_slot || null,
+        params.commitment_level || null,
+        params.error_message || null,
+        params.transaction_fee_sol || null,
+      ],
+    });
 
-    await stmt.run(
-      params.signature || null,
-      params.sender_wallet_id || null,
-      params.sender_public_key,
-      params.status || TransactionStatus.PENDING,
-      params.slot || null,
-      params.priority_fee_unit_limit || null,
-      params.priority_fee_unit_price_lamports || null,
-      params.slippage_bps || null,
-      params.confirmed_at?.toISOString() || null,
-      params.confirmation_slot || null,
-      params.commitment_level || null,
-      params.error_message || null,
-      params.transaction_fee_sol || null,
-    );
+    const newResult = await client.execute({
+      sql: "SELECT * FROM transactions WHERE id = last_insert_rowid()",
+    });
 
-    const newTransaction = await client.prepare(`
-      SELECT * FROM transactions WHERE id = last_insert_rowid()
-    `).get() as DbTransaction;
+    const row = newResult.rows[0];
+    const newTransaction: DbTransaction = {
+      id: row.id as number,
+      signature: row.signature as string,
+      sender_wallet_id: row.sender_wallet_id as number | undefined,
+      sender_public_key: row.sender_public_key as string,
+      status: row.status as TransactionStatus,
+      slot: row.slot as number | undefined,
+      priority_fee_unit_limit: row.priority_fee_unit_limit as
+        | number
+        | undefined,
+      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
+        | number
+        | undefined,
+      slippage_bps: row.slippage_bps as number | undefined,
+      confirmed_at: row.confirmed_at as string | undefined,
+      confirmation_slot: row.confirmation_slot as number | undefined,
+      commitment_level: row.commitment_level as string | undefined,
+      error_message: row.error_message as string | undefined,
+      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
 
     if (params.bot_execution_id && params.pump_fun_transaction_type) {
       try {
@@ -139,7 +163,7 @@ export async function update(
   const client = getClient();
   try {
     const updates: string[] = [];
-    const values: BindValue[] = [];
+    const values: (string | number | Date)[] = [];
 
     if (params.signature !== undefined) {
       updates.push("signature = ?");
@@ -200,12 +224,39 @@ export async function update(
       WHERE id = ?
     `;
 
-    await client.prepare(sqlQuery).run(...values);
+    await client.execute({
+      sql: sqlQuery,
+      args: values,
+    });
 
-    const result = await client.prepare(`
-      SELECT * FROM transactions WHERE id = ?
-    `).get(id) as DbTransaction;
-    return result;
+    const result = await client.execute({
+      sql: "SELECT * FROM transactions WHERE id = ?",
+      args: [id],
+    });
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      signature: row.signature as string,
+      sender_wallet_id: row.sender_wallet_id as number | undefined,
+      sender_public_key: row.sender_public_key as string,
+      status: row.status as TransactionStatus,
+      slot: row.slot as number | undefined,
+      priority_fee_unit_limit: row.priority_fee_unit_limit as
+        | number
+        | undefined,
+      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
+        | number
+        | undefined,
+      slippage_bps: row.slippage_bps as number | undefined,
+      confirmed_at: row.confirmed_at as string | undefined,
+      confirmation_slot: row.confirmation_slot as number | undefined,
+      commitment_level: row.commitment_level as string | undefined,
+      error_message: row.error_message as string | undefined,
+      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -222,10 +273,38 @@ export async function findById(
 ): Promise<DbTransaction | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM transactions WHERE id = ?
-    `).get(id) as DbTransaction | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM transactions WHERE id = ?",
+      args: [id],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      signature: row.signature as string,
+      sender_wallet_id: row.sender_wallet_id as number | undefined,
+      sender_public_key: row.sender_public_key as string,
+      status: row.status as TransactionStatus,
+      slot: row.slot as number | undefined,
+      priority_fee_unit_limit: row.priority_fee_unit_limit as
+        | number
+        | undefined,
+      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
+        | number
+        | undefined,
+      slippage_bps: row.slippage_bps as number | undefined,
+      confirmed_at: row.confirmed_at as string | undefined,
+      confirmation_slot: row.confirmation_slot as number | undefined,
+      commitment_level: row.commitment_level as string | undefined,
+      error_message: row.error_message as string | undefined,
+      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,

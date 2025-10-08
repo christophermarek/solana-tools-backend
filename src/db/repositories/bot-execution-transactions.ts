@@ -1,6 +1,5 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
-import type { BindValue } from "../types.ts";
 
 export enum PumpFunTransactionType {
   BUY = "buy",
@@ -29,23 +28,36 @@ export async function create(
 ): Promise<DbBotExecutionTransaction> {
   const client = getClient();
   try {
-    const stmt = client.prepare(`
-      INSERT INTO bot_execution_transactions (
-        bot_execution_id,
-        transaction_id,
-        pump_fun_transaction_type
-      ) VALUES (?, ?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO bot_execution_transactions (
+          bot_execution_id,
+          transaction_id,
+          pump_fun_transaction_type
+        ) VALUES (?, ?, ?)
+      `,
+      args: [
+        params.bot_execution_id,
+        params.transaction_id,
+        params.pump_fun_transaction_type,
+      ],
+    });
 
-    await stmt.run(
-      params.bot_execution_id,
-      params.transaction_id,
-      params.pump_fun_transaction_type,
-    );
+    const newResult = await client.execute({
+      sql:
+        "SELECT * FROM bot_execution_transactions WHERE id = last_insert_rowid()",
+    });
 
-    const newTransaction = await client.prepare(`
-      SELECT * FROM bot_execution_transactions WHERE id = last_insert_rowid()
-    `).get() as DbBotExecutionTransaction;
+    const row = newResult.rows[0];
+    const newTransaction: DbBotExecutionTransaction = {
+      id: row.id as number,
+      bot_execution_id: row.bot_execution_id as number,
+      transaction_id: row.transaction_id as number,
+      pump_fun_transaction_type: row
+        .pump_fun_transaction_type as PumpFunTransactionType,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
 
     logging.info(requestId, "Created bot execution transaction", {
       id: newTransaction.id,
@@ -56,7 +68,11 @@ export async function create(
 
     return newTransaction;
   } catch (error) {
-    logging.error(requestId, "Failed to create bot execution transaction", error);
+    logging.error(
+      requestId,
+      "Failed to create bot execution transaction",
+      error,
+    );
     throw error;
   }
 }
@@ -67,12 +83,24 @@ export async function findByBotExecutionId(
 ): Promise<DbBotExecutionTransaction[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_execution_transactions 
-      WHERE bot_execution_id = ? 
-      ORDER BY created_at ASC
-    `).all(botExecutionId) as DbBotExecutionTransaction[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_execution_transactions 
+        WHERE bot_execution_id = ? 
+        ORDER BY created_at ASC
+      `,
+      args: [botExecutionId],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      bot_execution_id: row.bot_execution_id as number,
+      transaction_id: row.transaction_id as number,
+      pump_fun_transaction_type: row
+        .pump_fun_transaction_type as PumpFunTransactionType,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(
       requestId,
@@ -89,10 +117,25 @@ export async function findByTransactionId(
 ): Promise<DbBotExecutionTransaction | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_execution_transactions WHERE transaction_id = ?
-    `).get(transactionId) as DbBotExecutionTransaction | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM bot_execution_transactions WHERE transaction_id = ?",
+      args: [transactionId],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      bot_execution_id: row.bot_execution_id as number,
+      transaction_id: row.transaction_id as number,
+      pump_fun_transaction_type: row
+        .pump_fun_transaction_type as PumpFunTransactionType,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -109,12 +152,24 @@ export async function listByType(
 ): Promise<DbBotExecutionTransaction[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM bot_execution_transactions 
-      WHERE pump_fun_transaction_type = ? 
-      ORDER BY created_at DESC
-    `).all(type) as DbBotExecutionTransaction[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM bot_execution_transactions 
+        WHERE pump_fun_transaction_type = ? 
+        ORDER BY created_at DESC
+      `,
+      args: [type],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      bot_execution_id: row.bot_execution_id as number,
+      transaction_id: row.transaction_id as number,
+      pump_fun_transaction_type: row
+        .pump_fun_transaction_type as PumpFunTransactionType,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(
       requestId,
@@ -131,11 +186,16 @@ export async function countByBotExecutionId(
 ): Promise<number> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT COUNT(*) as count FROM bot_execution_transactions 
-      WHERE bot_execution_id = ?
-    `).get(botExecutionId) as { count: number };
-    return result.count;
+    const result = await client.execute({
+      sql: `
+        SELECT COUNT(*) as count FROM bot_execution_transactions 
+        WHERE bot_execution_id = ?
+      `,
+      args: [botExecutionId],
+    });
+
+    const row = result.rows[0];
+    return row.count as number;
   } catch (error) {
     logging.error(
       requestId,

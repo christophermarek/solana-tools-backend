@@ -11,10 +11,15 @@ export interface Migration {
 export async function getExecutedMigrations(): Promise<Migration[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM migrations ORDER BY id ASC
-    `).all() as Migration[];
-    return result;
+    const result = await client.execute({
+      sql: "SELECT * FROM migrations ORDER BY id ASC",
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      name: row.name as string,
+      executed_at: row.executed_at as string,
+    }));
   } catch (_error) {
     logging.info(
       "migration",
@@ -26,9 +31,10 @@ export async function getExecutedMigrations(): Promise<Migration[]> {
 
 export async function recordMigration(name: string): Promise<void> {
   const client = getClient();
-  await client.prepare(`
-    INSERT INTO migrations (name) VALUES (?)
-  `).run(name);
+  await client.execute({
+    sql: "INSERT INTO migrations (name) VALUES (?)",
+    args: [name],
+  });
 }
 
 export async function getMigrationFiles(): Promise<string[]> {
@@ -64,7 +70,7 @@ export async function executeMigrationFile(filename: string): Promise<void> {
 
     for (const statement of statements) {
       if (statement.trim()) {
-        await client.exec(statement);
+        await client.execute({ sql: statement });
       }
     }
 

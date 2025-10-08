@@ -2,7 +2,6 @@ import { getClient } from "../client.ts";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import * as logging from "../../utils/logging.ts";
-import type { BindValue } from "../types.ts";
 export interface WalletStats {
   total_wallets: number;
   total_sol_balance: string;
@@ -44,28 +43,44 @@ export async function create(
 ): Promise<DbKeypair> {
   const client = getClient();
   try {
-    const stmt = client.prepare(`
-      INSERT INTO keypairs (
-        public_key,
-        secret_key,
-        label,
-        balance_status,
-        owner_user_id
-      ) VALUES (?, ?, ?, ?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO keypairs (
+          public_key,
+          secret_key,
+          label,
+          balance_status,
+          owner_user_id
+        ) VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        keypair.publicKey.toString(),
+        bs58.encode(keypair.secretKey),
+        label ?? null,
+        BalanceStatus.UNKNOWN,
+        ownerUserId,
+      ],
+    });
 
-    await stmt.run(
-      keypair.publicKey.toString(),
-      bs58.encode(keypair.secretKey),
-      label ?? null,
-      BalanceStatus.UNKNOWN,
-      ownerUserId,
-    );
-    const newKeypair = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ?
-    `).get(keypair.publicKey.toString()) as DbKeypair;
+    const result = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE public_key = ?",
+      args: [keypair.publicKey.toString()],
+    });
 
-    return newKeypair;
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -83,10 +98,29 @@ export async function findById(
 ): Promise<DbKeypair | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?
-    `).get(id, ownerUserId) as DbKeypair | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?",
+      args: [id, ownerUserId],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
   } catch (error) {
     logging.error(requestId, `Failed to find keypair with id ${id}`, error);
     throw error;
@@ -100,10 +134,29 @@ export async function findByPublicKey(
 ): Promise<DbKeypair | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
-    `).get(publicKey, ownerUserId) as DbKeypair | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?",
+      args: [publicKey, ownerUserId],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -120,10 +173,25 @@ export async function listAll(
 ): Promise<DbKeypair[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE owner_user_id = ? ORDER BY created_at DESC
-    `).all(ownerUserId) as DbKeypair[];
-    return result;
+    const result = await client.execute({
+      sql:
+        "SELECT * FROM keypairs WHERE owner_user_id = ? ORDER BY created_at DESC",
+      args: [ownerUserId],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    }));
   } catch (error) {
     logging.error(requestId, "Failed to list keypairs", error);
     throw error;
@@ -148,9 +216,10 @@ export async function deleteById(
       );
     }
 
-    await client.prepare(`
-      DELETE FROM keypairs WHERE id = ? AND owner_user_id = ?
-    `).run(id, ownerUserId);
+    await client.execute({
+      sql: "DELETE FROM keypairs WHERE id = ? AND owner_user_id = ?",
+      args: [id, ownerUserId],
+    });
     logging.info(
       requestId,
       `Deleted keypair with id ${id} by owner ${ownerUserId}`,
@@ -174,7 +243,7 @@ export async function updateBalance(
   const client = getClient();
   try {
     const updates: string[] = [];
-    const values: BindValue[] = [];
+    const values: (string | number | Date)[] = [];
 
     if (params.sol_balance !== undefined) {
       updates.push("sol_balance = ?");
@@ -207,12 +276,30 @@ export async function updateBalance(
       WHERE id = ? AND owner_user_id = ?
     `;
 
-    await client.prepare(sqlQuery).run(...values);
+    await client.execute({
+      sql: sqlQuery,
+      args: values,
+    });
 
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?
-    `).get(id, ownerUserId) as DbKeypair;
-    return result;
+    const result = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE id = ? AND owner_user_id = ?",
+      args: [id, ownerUserId],
+    });
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -265,12 +352,30 @@ export async function updateBalanceByPublicKey(
     WHERE public_key = ? AND owner_user_id = ?
   `;
 
-  await client.prepare(sqlQuery).run(...values);
+  await client.execute({
+    sql: sqlQuery,
+    args: values,
+  });
 
-  const result = await client.prepare(`
-    SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
-  `).get(publicKey, ownerUserId) as DbKeypair;
-  return result;
+  const result = await client.execute({
+    sql: "SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?",
+    args: [publicKey, ownerUserId],
+  });
+
+  const row = result.rows[0];
+  return {
+    id: row.id as number,
+    public_key: row.public_key as string,
+    secret_key: row.secret_key as string,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+    label: row.label as string | undefined,
+    sol_balance: row.sol_balance as number | undefined,
+    wsol_balance: row.wsol_balance as number | undefined,
+    last_balance_update: row.last_balance_update as string | undefined,
+    balance_status: row.balance_status as BalanceStatus,
+    owner_user_id: row.owner_user_id as string,
+  };
 }
 
 export function toKeypair(secretKey: string): Keypair | null {
@@ -304,18 +409,40 @@ export async function updateLabel(
       );
     }
 
-    await client.prepare(`
-      UPDATE keypairs 
-      SET 
-        label = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND owner_user_id = ?
-    `).run(label ?? null, id, ownerUserId);
+    await client.execute({
+      sql: `
+        UPDATE keypairs 
+        SET 
+          label = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND owner_user_id = ?
+      `,
+      args: [label ?? null, id, ownerUserId],
+    });
 
-    const result = await client.prepare(`
-      SELECT * FROM keypairs WHERE id = ?
-    `).get(id) as DbKeypair | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE id = ?",
+      args: [id],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
   } catch (error) {
     logging.error(requestId, `Failed to update label for keypair ${id}`, error);
     throw error;
@@ -335,34 +462,67 @@ export async function importWallet(
     const keypair = Keypair.fromSecretKey(keyArray);
     const publicKey = keypair.publicKey.toString();
 
-    const existingWallet = await client.prepare(`
-    SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?
-  `).get(publicKey, ownerUserId) as DbKeypair | undefined;
+    const existingResult = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE public_key = ? AND owner_user_id = ?",
+      args: [publicKey, ownerUserId],
+    });
 
-    if (existingWallet) {
+    if (existingResult.rows.length > 0) {
+      const row = existingResult.rows[0];
+      const existingWallet: DbKeypair = {
+        id: row.id as number,
+        public_key: row.public_key as string,
+        secret_key: row.secret_key as string,
+        created_at: row.created_at as string,
+        updated_at: row.updated_at as string,
+        label: row.label as string | undefined,
+        sol_balance: row.sol_balance as number | undefined,
+        wsol_balance: row.wsol_balance as number | undefined,
+        last_balance_update: row.last_balance_update as string | undefined,
+        balance_status: row.balance_status as BalanceStatus,
+        owner_user_id: row.owner_user_id as string,
+      };
       return [existingWallet, null];
     }
 
-    const stmt = client.prepare(`
-    INSERT INTO keypairs (
-      public_key,
-      secret_key,
-      label,
-      balance_status,
-      owner_user_id
-    ) VALUES (?, ?, ?, ?, ?)
-  `);
+    await client.execute({
+      sql: `
+        INSERT INTO keypairs (
+          public_key,
+          secret_key,
+          label,
+          balance_status,
+          owner_user_id
+        ) VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [
+        publicKey,
+        secretKey,
+        label ?? null,
+        BalanceStatus.UNKNOWN,
+        ownerUserId,
+      ],
+    });
 
-    await stmt.run(
-      publicKey,
-      secretKey,
-      label ?? null,
-      BalanceStatus.UNKNOWN,
-      ownerUserId,
-    );
-    const newWallet = await client.prepare(`
-    SELECT * FROM keypairs WHERE public_key = ?
-    `).get(publicKey) as DbKeypair;
+    const newResult = await client.execute({
+      sql: "SELECT * FROM keypairs WHERE public_key = ?",
+      args: [publicKey],
+    });
+
+    const row = newResult.rows[0];
+    const newWallet: DbKeypair = {
+      id: row.id as number,
+      public_key: row.public_key as string,
+      secret_key: row.secret_key as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+      label: row.label as string | undefined,
+      sol_balance: row.sol_balance as number | undefined,
+      wsol_balance: row.wsol_balance as number | undefined,
+      last_balance_update: row.last_balance_update as string | undefined,
+      balance_status: row.balance_status as BalanceStatus,
+      owner_user_id: row.owner_user_id as string,
+    };
     return [newWallet, null];
   } catch (error) {
     logging.error("keypair", `Failed to import wallet`, error);

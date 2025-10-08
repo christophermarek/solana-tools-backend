@@ -20,21 +20,28 @@ export async function create(
 ): Promise<DbPumpfunMint> {
   const client = getClient();
   try {
-    const stmt = client.prepare(`
-      INSERT INTO pumpfun_mints (
-        mint_public_key,
-        telegram_user_id
-      ) VALUES (?, ?)
-    `);
+    await client.execute({
+      sql: `
+        INSERT INTO pumpfun_mints (
+          mint_public_key,
+          telegram_user_id
+        ) VALUES (?, ?)
+      `,
+      args: [params.mint_public_key, params.telegram_user_id],
+    });
 
-    await stmt.run(
-      params.mint_public_key,
-      params.telegram_user_id,
-    );
+    const newResult = await client.execute({
+      sql: "SELECT * FROM pumpfun_mints WHERE id = last_insert_rowid()",
+    });
 
-    const newMint = await client.prepare(`
-      SELECT * FROM pumpfun_mints WHERE id = last_insert_rowid()
-    `).get() as DbPumpfunMint;
+    const row = newResult.rows[0];
+    const newMint: DbPumpfunMint = {
+      id: row.id as number,
+      mint_public_key: row.mint_public_key as string,
+      telegram_user_id: row.telegram_user_id as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
 
     logging.info(
       requestId,
@@ -58,10 +65,23 @@ export async function findByMintPublicKey(
 ): Promise<DbPumpfunMint | null> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM pumpfun_mints WHERE mint_public_key = ?
-    `).get(mintPublicKey) as DbPumpfunMint | undefined;
-    return result || null;
+    const result = await client.execute({
+      sql: "SELECT * FROM pumpfun_mints WHERE mint_public_key = ?",
+      args: [mintPublicKey],
+    });
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id as number,
+      mint_public_key: row.mint_public_key as string,
+      telegram_user_id: row.telegram_user_id as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
   } catch (error) {
     logging.error(
       requestId,
@@ -78,12 +98,22 @@ export async function listByTelegramUserId(
 ): Promise<DbPumpfunMint[]> {
   const client = getClient();
   try {
-    const result = await client.prepare(`
-      SELECT * FROM pumpfun_mints 
-      WHERE telegram_user_id = ? 
-      ORDER BY created_at DESC
-    `).all(telegramUserId) as DbPumpfunMint[];
-    return result;
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM pumpfun_mints 
+        WHERE telegram_user_id = ? 
+        ORDER BY created_at DESC
+      `,
+      args: [telegramUserId],
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as number,
+      mint_public_key: row.mint_public_key as string,
+      telegram_user_id: row.telegram_user_id as string,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    }));
   } catch (error) {
     logging.error(
       requestId,
@@ -114,9 +144,11 @@ export async function deleteByMintPublicKey(
       );
     }
 
-    await client.prepare(`
-      DELETE FROM pumpfun_mints WHERE mint_public_key = ? AND telegram_user_id = ?
-    `).run(mintPublicKey, telegramUserId);
+    await client.execute({
+      sql:
+        "DELETE FROM pumpfun_mints WHERE mint_public_key = ? AND telegram_user_id = ?",
+      args: [mintPublicKey, telegramUserId],
+    });
 
     logging.info(
       requestId,
