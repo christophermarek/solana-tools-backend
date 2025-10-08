@@ -1,6 +1,20 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 
+function rowToDbBotExecutionTransaction(
+  row: Record<string, unknown>,
+): DbBotExecutionTransaction {
+  return {
+    id: row.id as number,
+    bot_execution_id: row.bot_execution_id as number,
+    transaction_id: row.transaction_id as number,
+    pump_fun_transaction_type: row
+      .pump_fun_transaction_type as PumpFunTransactionType,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export enum PumpFunTransactionType {
   BUY = "buy",
   SELL = "sell",
@@ -48,16 +62,7 @@ export async function create(
         "SELECT * FROM bot_execution_transactions WHERE id = last_insert_rowid()",
     });
 
-    const row = newResult.rows[0];
-    const newTransaction: DbBotExecutionTransaction = {
-      id: row.id as number,
-      bot_execution_id: row.bot_execution_id as number,
-      transaction_id: row.transaction_id as number,
-      pump_fun_transaction_type: row
-        .pump_fun_transaction_type as PumpFunTransactionType,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    const newTransaction = rowToDbBotExecutionTransaction(newResult.rows[0]);
 
     logging.info(requestId, "Created bot execution transaction", {
       id: newTransaction.id,
@@ -92,15 +97,7 @@ export async function findByBotExecutionId(
       args: [botExecutionId],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      bot_execution_id: row.bot_execution_id as number,
-      transaction_id: row.transaction_id as number,
-      pump_fun_transaction_type: row
-        .pump_fun_transaction_type as PumpFunTransactionType,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbBotExecutionTransaction);
   } catch (error) {
     logging.error(
       requestId,
@@ -126,16 +123,7 @@ export async function findByTransactionId(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      bot_execution_id: row.bot_execution_id as number,
-      transaction_id: row.transaction_id as number,
-      pump_fun_transaction_type: row
-        .pump_fun_transaction_type as PumpFunTransactionType,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbBotExecutionTransaction(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -161,15 +149,7 @@ export async function listByType(
       args: [type],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      bot_execution_id: row.bot_execution_id as number,
-      transaction_id: row.transaction_id as number,
-      pump_fun_transaction_type: row
-        .pump_fun_transaction_type as PumpFunTransactionType,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbBotExecutionTransaction);
   } catch (error) {
     logging.error(
       requestId,

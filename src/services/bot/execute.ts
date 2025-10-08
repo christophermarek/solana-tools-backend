@@ -1,14 +1,14 @@
 import * as logging from "../../utils/logging.ts";
-import { BotExecutionTransaction, BotType } from "./_types.ts";
+import type { BotExecutionTransaction, BotType } from "./_types.ts";
 import { executeBotFromRegistry } from "./bot-executor.ts";
 import { validateWalletAndGetKeypair } from "../wallet/_utils.ts";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { type Keypair, PublicKey } from "@solana/web3.js";
 import * as botExecutionRepo from "../../db/repositories/bot-executions.ts";
 import { BotExecutionStatus } from "../../db/repositories/bot-executions.ts";
 import * as botExecutionTransactionRepo from "../../db/repositories/bot-execution-transactions.ts";
 import * as transactionRepo from "../../db/repositories/transactions.ts";
 import { getConfig } from "../../utils/env.ts";
-import { BOT_ERRORS, BotErrors } from "./_errors.ts";
+import { BOT_ERRORS, type BotErrors } from "./_errors.ts";
 import { TAG } from "./_constants.ts";
 
 interface BotExecutionParameters {
@@ -69,11 +69,15 @@ export async function startBotExecution(
       botType,
     });
 
+    if (!validation) {
+      return [null, "Wallet validation failed"];
+    }
+
     executeAsync(
       execution.id,
       botType,
       parameters,
-      validation!.keypair,
+      validation.keypair,
       ownerUserId,
       requestId,
     );
@@ -160,26 +164,26 @@ async function executeAsync(
         ownerUserId,
         requestId,
       );
-    } else {
+    } else if (result) {
       logging.info(requestId, "Bot execution completed successfully", {
         executionId,
-        success: result!.success,
-        totalCycles: result!.totalCycles,
-        successfulCycles: result!.successfulCycles,
-        failedCycles: result!.failedCycles,
+        success: result.success,
+        totalCycles: result.totalCycles,
+        successfulCycles: result.successfulCycles,
+        failedCycles: result.failedCycles,
       });
 
       await botExecutionRepo.update(
         executionId,
         {
           status: BotExecutionStatus.COMPLETED,
-          total_cycles: result!.totalCycles,
-          successful_cycles: result!.successfulCycles,
-          failed_cycles: result!.failedCycles,
+          total_cycles: result.totalCycles,
+          successful_cycles: result.successfulCycles,
+          failed_cycles: result.failedCycles,
           execution_time_ms: executionTime,
-          bot_specific_results: JSON.stringify(result!.botSpecificResults),
-          errors: result!.errors.length > 0
-            ? JSON.stringify(result!.errors)
+          bot_specific_results: JSON.stringify(result.botSpecificResults),
+          errors: result.errors.length > 0
+            ? JSON.stringify(result.errors)
             : undefined,
           completed_at: new Date(),
         },

@@ -1,13 +1,13 @@
-import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import type { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as pumpfunMintsRepo from "../../db/repositories/pumpfun-mints.ts";
-import { TrackMintPayload, TrackMintResponse } from "./_dto.ts";
+import type { TrackMintPayload, TrackMintResponse } from "./_dto.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import {
+import type {
   AppRouterContext,
   AppStateWithBody,
-  getContext,
 } from "../../middleware/_context.ts";
+import { getContext } from "../../middleware/_context.ts";
 
 export const trackMint: RouterMiddleware<
   string,

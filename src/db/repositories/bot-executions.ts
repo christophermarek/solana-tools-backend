@@ -1,6 +1,27 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 
+function rowToDbBotExecution(row: Record<string, unknown>): DbBotExecution {
+  return {
+    id: row.id as number,
+    bot_type: row.bot_type as string,
+    bot_params: row.bot_params as string,
+    wallet_id: row.wallet_id as number,
+    owner_user_id: row.owner_user_id as string,
+    status: row.status as BotExecutionStatus,
+    total_cycles: row.total_cycles as number,
+    successful_cycles: row.successful_cycles as number,
+    failed_cycles: row.failed_cycles as number,
+    execution_time_ms: row.execution_time_ms as number,
+    bot_specific_results: row.bot_specific_results as string | undefined,
+    errors: row.errors as string | undefined,
+    created_at: row.created_at as string,
+    started_at: row.started_at as string | undefined,
+    completed_at: row.completed_at as string | undefined,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export enum BotExecutionStatus {
   PENDING = "PENDING",
   RUNNING = "RUNNING",
@@ -87,25 +108,7 @@ export async function create(
       ],
     });
 
-    const row = result.rows[0];
-    const newExecution: DbBotExecution = {
-      id: row.id as number,
-      bot_type: row.bot_type as string,
-      bot_params: row.bot_params as string,
-      wallet_id: row.wallet_id as number,
-      owner_user_id: row.owner_user_id as string,
-      status: row.status as BotExecutionStatus,
-      total_cycles: row.total_cycles as number,
-      successful_cycles: row.successful_cycles as number,
-      failed_cycles: row.failed_cycles as number,
-      execution_time_ms: row.execution_time_ms as number,
-      bot_specific_results: row.bot_specific_results as string | undefined,
-      errors: row.errors as string | undefined,
-      created_at: row.created_at as string,
-      started_at: row.started_at as string | undefined,
-      completed_at: row.completed_at as string | undefined,
-      updated_at: row.updated_at as string,
-    };
+    const newExecution = rowToDbBotExecution(result.rows[0]);
 
     logging.info(requestId, "Created bot execution", {
       id: newExecution.id,
@@ -137,25 +140,7 @@ export async function findById(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      bot_type: row.bot_type as string,
-      bot_params: row.bot_params as string,
-      wallet_id: row.wallet_id as number,
-      owner_user_id: row.owner_user_id as string,
-      status: row.status as BotExecutionStatus,
-      total_cycles: row.total_cycles as number,
-      successful_cycles: row.successful_cycles as number,
-      failed_cycles: row.failed_cycles as number,
-      execution_time_ms: row.execution_time_ms as number,
-      bot_specific_results: row.bot_specific_results as string | undefined,
-      errors: row.errors as string | undefined,
-      created_at: row.created_at as string,
-      started_at: row.started_at as string | undefined,
-      completed_at: row.completed_at as string | undefined,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbBotExecution(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -297,24 +282,7 @@ export async function listByStatus(
       args: [status],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      bot_type: row.bot_type as string,
-      bot_params: row.bot_params as string,
-      wallet_id: row.wallet_id as number,
-      owner_user_id: row.owner_user_id as string,
-      status: row.status as BotExecutionStatus,
-      total_cycles: row.total_cycles as number,
-      successful_cycles: row.successful_cycles as number,
-      failed_cycles: row.failed_cycles as number,
-      execution_time_ms: row.execution_time_ms as number,
-      bot_specific_results: row.bot_specific_results as string | undefined,
-      errors: row.errors as string | undefined,
-      created_at: row.created_at as string,
-      started_at: row.started_at as string | undefined,
-      completed_at: row.completed_at as string | undefined,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbBotExecution);
   } catch (error) {
     logging.error(
       requestId,
@@ -341,24 +309,7 @@ export async function listByWalletId(
       args: [walletId, ownerUserId],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      bot_type: row.bot_type as string,
-      bot_params: row.bot_params as string,
-      wallet_id: row.wallet_id as number,
-      owner_user_id: row.owner_user_id as string,
-      status: row.status as BotExecutionStatus,
-      total_cycles: row.total_cycles as number,
-      successful_cycles: row.successful_cycles as number,
-      failed_cycles: row.failed_cycles as number,
-      execution_time_ms: row.execution_time_ms as number,
-      bot_specific_results: row.bot_specific_results as string | undefined,
-      errors: row.errors as string | undefined,
-      created_at: row.created_at as string,
-      started_at: row.started_at as string | undefined,
-      completed_at: row.completed_at as string | undefined,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbBotExecution);
   } catch (error) {
     logging.error(
       requestId,
@@ -386,24 +337,7 @@ export async function listRecent(
       args: [ownerUserId, limit],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      bot_type: row.bot_type as string,
-      bot_params: row.bot_params as string,
-      wallet_id: row.wallet_id as number,
-      owner_user_id: row.owner_user_id as string,
-      status: row.status as BotExecutionStatus,
-      total_cycles: row.total_cycles as number,
-      successful_cycles: row.successful_cycles as number,
-      failed_cycles: row.failed_cycles as number,
-      execution_time_ms: row.execution_time_ms as number,
-      bot_specific_results: row.bot_specific_results as string | undefined,
-      errors: row.errors as string | undefined,
-      created_at: row.created_at as string,
-      started_at: row.started_at as string | undefined,
-      completed_at: row.completed_at as string | undefined,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbBotExecution);
   } catch (error) {
     logging.error(requestId, "Failed to list recent bot executions", error);
     throw error;

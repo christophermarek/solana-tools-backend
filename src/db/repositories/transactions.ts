@@ -3,6 +3,29 @@ import * as logging from "../../utils/logging.ts";
 import * as botExecutionTransactionRepo from "./bot-execution-transactions.ts";
 import type { PumpFunTransactionType } from "./bot-execution-transactions.ts";
 
+function rowToDbTransaction(row: Record<string, unknown>): DbTransaction {
+  return {
+    id: row.id as number,
+    signature: row.signature as string,
+    sender_wallet_id: row.sender_wallet_id as number | undefined,
+    sender_public_key: row.sender_public_key as string,
+    status: row.status as TransactionStatus,
+    slot: row.slot as number | undefined,
+    priority_fee_unit_limit: row.priority_fee_unit_limit as number | undefined,
+    priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
+      | number
+      | undefined,
+    slippage_bps: row.slippage_bps as number | undefined,
+    confirmed_at: row.confirmed_at as string | undefined,
+    confirmation_slot: row.confirmation_slot as number | undefined,
+    commitment_level: row.commitment_level as string | undefined,
+    error_message: row.error_message as string | undefined,
+    transaction_fee_sol: row.transaction_fee_sol as number | undefined,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export enum TransactionStatus {
   PENDING = "PENDING",
   CONFIRMED = "CONFIRMED",
@@ -104,29 +127,7 @@ export async function create(
       sql: "SELECT * FROM transactions WHERE id = last_insert_rowid()",
     });
 
-    const row = newResult.rows[0];
-    const newTransaction: DbTransaction = {
-      id: row.id as number,
-      signature: row.signature as string,
-      sender_wallet_id: row.sender_wallet_id as number | undefined,
-      sender_public_key: row.sender_public_key as string,
-      status: row.status as TransactionStatus,
-      slot: row.slot as number | undefined,
-      priority_fee_unit_limit: row.priority_fee_unit_limit as
-        | number
-        | undefined,
-      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
-        | number
-        | undefined,
-      slippage_bps: row.slippage_bps as number | undefined,
-      confirmed_at: row.confirmed_at as string | undefined,
-      confirmation_slot: row.confirmation_slot as number | undefined,
-      commitment_level: row.commitment_level as string | undefined,
-      error_message: row.error_message as string | undefined,
-      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    const newTransaction = rowToDbTransaction(newResult.rows[0]);
 
     if (params.bot_execution_id && params.pump_fun_transaction_type) {
       try {
@@ -234,29 +235,7 @@ export async function update(
       args: [id],
     });
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      signature: row.signature as string,
-      sender_wallet_id: row.sender_wallet_id as number | undefined,
-      sender_public_key: row.sender_public_key as string,
-      status: row.status as TransactionStatus,
-      slot: row.slot as number | undefined,
-      priority_fee_unit_limit: row.priority_fee_unit_limit as
-        | number
-        | undefined,
-      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
-        | number
-        | undefined,
-      slippage_bps: row.slippage_bps as number | undefined,
-      confirmed_at: row.confirmed_at as string | undefined,
-      confirmation_slot: row.confirmation_slot as number | undefined,
-      commitment_level: row.commitment_level as string | undefined,
-      error_message: row.error_message as string | undefined,
-      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbTransaction(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -282,29 +261,7 @@ export async function findById(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      signature: row.signature as string,
-      sender_wallet_id: row.sender_wallet_id as number | undefined,
-      sender_public_key: row.sender_public_key as string,
-      status: row.status as TransactionStatus,
-      slot: row.slot as number | undefined,
-      priority_fee_unit_limit: row.priority_fee_unit_limit as
-        | number
-        | undefined,
-      priority_fee_unit_price_lamports: row.priority_fee_unit_price_lamports as
-        | number
-        | undefined,
-      slippage_bps: row.slippage_bps as number | undefined,
-      confirmed_at: row.confirmed_at as string | undefined,
-      confirmation_slot: row.confirmation_slot as number | undefined,
-      commitment_level: row.commitment_level as string | undefined,
-      error_message: row.error_message as string | undefined,
-      transaction_fee_sol: row.transaction_fee_sol as number | undefined,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbTransaction(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,

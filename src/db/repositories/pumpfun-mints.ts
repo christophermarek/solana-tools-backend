@@ -1,6 +1,16 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 
+function rowToDbPumpfunMint(row: Record<string, unknown>): DbPumpfunMint {
+  return {
+    id: row.id as number,
+    mint_public_key: row.mint_public_key as string,
+    telegram_user_id: row.telegram_user_id as string,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export interface DbPumpfunMint {
   id: number;
   mint_public_key: string;
@@ -34,14 +44,7 @@ export async function create(
       sql: "SELECT * FROM pumpfun_mints WHERE id = last_insert_rowid()",
     });
 
-    const row = newResult.rows[0];
-    const newMint: DbPumpfunMint = {
-      id: row.id as number,
-      mint_public_key: row.mint_public_key as string,
-      telegram_user_id: row.telegram_user_id as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    const newMint = rowToDbPumpfunMint(newResult.rows[0]);
 
     logging.info(
       requestId,
@@ -74,14 +77,7 @@ export async function findByMintPublicKey(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      mint_public_key: row.mint_public_key as string,
-      telegram_user_id: row.telegram_user_id as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbPumpfunMint(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -107,13 +103,7 @@ export async function listByTelegramUserId(
       args: [telegramUserId],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      mint_public_key: row.mint_public_key as string,
-      telegram_user_id: row.telegram_user_id as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbPumpfunMint);
   } catch (error) {
     logging.error(
       requestId,

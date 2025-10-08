@@ -1,6 +1,16 @@
 import { getClient } from "../client.ts";
 import * as logging from "../../utils/logging.ts";
 
+function rowToDbUser(row: Record<string, unknown>): DbUser {
+  return {
+    id: row.id as string,
+    telegram_id: row.telegram_id as string,
+    role_id: row.role_id as string,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export interface DbUser {
   id: string;
   telegram_id: string;
@@ -24,14 +34,7 @@ export async function getUser(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as string,
-      telegram_id: row.telegram_id as string,
-      role_id: row.role_id as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    return rowToDbUser(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,

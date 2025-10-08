@@ -3,6 +3,16 @@ import * as logging from "../../utils/logging.ts";
 import type { DbUser } from "./users.ts";
 import { getUserOrCreate } from "./users.ts";
 
+function rowToDbUser(row: Record<string, unknown>): DbUser {
+  return {
+    id: row.id as string,
+    telegram_id: row.telegram_id as string,
+    role_id: "", // Not available in whitelist table
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  };
+}
+
 export async function getWhitelist(
   requestId = "system",
 ): Promise<DbUser[]> {
@@ -13,13 +23,7 @@ export async function getWhitelist(
         "SELECT id, telegram_id, created_at, updated_at FROM whitelisted_telegram_users ORDER BY created_at DESC",
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as string,
-      telegram_id: row.telegram_id as string,
-      role_id: "", // Not available in whitelist table
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    }));
+    return result.rows.map(rowToDbUser);
   } catch (error) {
     logging.error(requestId, "Failed to get whitelist", error);
     throw error;
@@ -100,14 +104,7 @@ export async function addTelegramUserToWhitelist(
         args: [telegramId],
       });
 
-      const row = existingResult.rows[0];
-      const existingUser: DbUser = {
-        id: row.id as string,
-        telegram_id: row.telegram_id as string,
-        role_id: "",
-        created_at: row.created_at as string,
-        updated_at: row.updated_at as string,
-      };
+      const existingUser = rowToDbUser(existingResult.rows[0]);
       logging.info(
         requestId,
         `Telegram user ${telegramId} is already whitelisted`,
@@ -131,14 +128,7 @@ export async function addTelegramUserToWhitelist(
       args: [id],
     });
 
-    const row = newResult.rows[0];
-    const newWhitelistedUser: DbUser = {
-      id: row.id as string,
-      telegram_id: row.telegram_id as string,
-      role_id: "", // Not available in whitelist table
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-    };
+    const newWhitelistedUser = rowToDbUser(newResult.rows[0]);
 
     logging.info(requestId, `Added telegram user ${telegramId} to whitelist`);
     return newWhitelistedUser;

@@ -2,6 +2,22 @@ import { getClient } from "../client.ts";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import * as logging from "../../utils/logging.ts";
+
+function rowToDbKeypair(row: Record<string, unknown>): DbKeypair {
+  return {
+    id: row.id as number,
+    public_key: row.public_key as string,
+    secret_key: row.secret_key as string,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+    label: row.label as string | undefined,
+    sol_balance: row.sol_balance as number | undefined,
+    wsol_balance: row.wsol_balance as number | undefined,
+    last_balance_update: row.last_balance_update as string | undefined,
+    balance_status: row.balance_status as BalanceStatus,
+    owner_user_id: row.owner_user_id as string,
+  };
+}
 export interface WalletStats {
   total_wallets: number;
   total_sol_balance: string;
@@ -67,20 +83,7 @@ export async function create(
       args: [keypair.publicKey.toString()],
     });
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    };
+    return rowToDbKeypair(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -107,20 +110,7 @@ export async function findById(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    };
+    return rowToDbKeypair(result.rows[0]);
   } catch (error) {
     logging.error(requestId, `Failed to find keypair with id ${id}`, error);
     throw error;
@@ -143,20 +133,7 @@ export async function findByPublicKey(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    };
+    return rowToDbKeypair(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -179,19 +156,7 @@ export async function listAll(
       args: [ownerUserId],
     });
 
-    return result.rows.map((row) => ({
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    }));
+    return result.rows.map(rowToDbKeypair);
   } catch (error) {
     logging.error(requestId, "Failed to list keypairs", error);
     throw error;
@@ -286,20 +251,7 @@ export async function updateBalance(
       args: [id, ownerUserId],
     });
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    };
+    return rowToDbKeypair(result.rows[0]);
   } catch (error) {
     logging.error(
       requestId,
@@ -429,20 +381,7 @@ export async function updateLabel(
       return null;
     }
 
-    const row = result.rows[0];
-    return {
-      id: row.id as number,
-      public_key: row.public_key as string,
-      secret_key: row.secret_key as string,
-      created_at: row.created_at as string,
-      updated_at: row.updated_at as string,
-      label: row.label as string | undefined,
-      sol_balance: row.sol_balance as number | undefined,
-      wsol_balance: row.wsol_balance as number | undefined,
-      last_balance_update: row.last_balance_update as string | undefined,
-      balance_status: row.balance_status as BalanceStatus,
-      owner_user_id: row.owner_user_id as string,
-    };
+    return rowToDbKeypair(result.rows[0]);
   } catch (error) {
     logging.error(requestId, `Failed to update label for keypair ${id}`, error);
     throw error;
