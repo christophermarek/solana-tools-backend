@@ -1,8 +1,7 @@
-import { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import type { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as logging from "../utils/logging.ts";
 import { getUserOrCreate } from "../db/repositories/users.ts";
-import { isTelegramUserWhitelisted } from "../db/repositories/whitelist.ts";
-import { AppContext, AppState } from "./_context.ts";
+import type { AppContext, AppState } from "./_context.ts";
 import { ResponseUtil } from "../routes/response.ts";
 import { MiddlewareError, MiddlewareErrorType } from "./error-handler.ts";
 
@@ -36,19 +35,20 @@ export function createAuthenticateTelegramUserMiddleware(): Middleware<
 
     try {
       const user = await getUserOrCreate(telegramId, requestId);
-      const isWhitelisted = await isTelegramUserWhitelisted(
-        user.telegram_id,
-        requestId,
-      );
-      if (!isWhitelisted) {
-        const error = new MiddlewareError(
-          MiddlewareErrorType.USER_NOT_WHITELISTED,
-          403,
-        );
-        logging.warn(requestId, error.message, error);
+      // whitelist is disabled
+      // const isWhitelisted = await isTelegramUserWhitelisted(
+      //   user.telegram_id,
+      //   requestId,
+      // );
+      // if (!isWhitelisted) {
+      //   const error = new MiddlewareError(
+      //     MiddlewareErrorType.USER_NOT_WHITELISTED,
+      //     403,
+      //   );
+      //   logging.warn(requestId, error.message, error);
 
-        return ResponseUtil.serverError(ctx, error);
-      }
+      //   return ResponseUtil.serverError(ctx, error);
+      // }
 
       ctx.state.telegramUser = user;
       await next();
