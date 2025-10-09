@@ -1,12 +1,12 @@
-import { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import type { RouterMiddleware } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import logging from "../../utils/logging.ts";
 import { ResponseUtil } from "../../routes/response.ts";
-import { ExecuteBotPayload, ExecuteBotResponse } from "./_dto.ts";
-import { BotType } from "../../services/bot/_types.ts";
+import type { ExecuteBotPayload, ExecuteBotResponse } from "./_dto.ts";
+import type { BotType } from "../../services/bot/_types.ts";
 import * as botExecuteService from "../../services/bot/execute.ts";
 import {
-  AppRouterContext,
-  AppStateWithBody,
+  type AppRouterContext,
+  type AppStateWithBody,
   getContext,
 } from "../../middleware/_context.ts";
 
@@ -69,13 +69,13 @@ export const executeBot: RouterMiddleware<
     }
 
     logging.info(requestId, "Bot execution started successfully", {
-      executionId: executionId!,
+      executionId: executionId,
       botType,
       walletId: parameters.walletId,
     });
 
     const response: ExecuteBotResponse = {
-      executionId: executionId!,
+      executionId: executionId ?? 0,
       status: "PENDING",
       message: "Bot execution started. Use the execution ID to check status.",
     };

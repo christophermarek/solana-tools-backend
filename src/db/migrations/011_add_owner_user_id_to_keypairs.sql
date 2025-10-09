@@ -6,6 +6,3 @@ ALTER TABLE keypairs ADD COLUMN owner_user_id VARCHAR(255) NOT NULL DEFAULT '';
 
 -- Create index for owner_user_id
 CREATE INDEX IF NOT EXISTS idx_keypairs_owner_user_id ON keypairs(owner_user_id);
-
--- Add foreign key constraint (optional, SQLite doesn't enforce it but documents the relationship)
--- Note: We'll handle the constraint at the application level

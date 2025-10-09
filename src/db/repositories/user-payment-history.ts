@@ -33,7 +33,7 @@ export interface CreateUserPaymentHistoryParams {
 export async function create(
   params: CreateUserPaymentHistoryParams,
   requestId = "system",
-): Promise<DbUserPaymentHistory> {
+): Promise<[DbUserPaymentHistory, null] | [null, string]> {
   const client = getClient();
   try {
     await client.execute({
@@ -44,7 +44,7 @@ export async function create(
           signature,
           deposited_at,
           processed_at
-        ) VALUES (?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?)
       `,
       args: [
         params.telegram_id,
@@ -60,17 +60,93 @@ export async function create(
       args: [params.signature],
     });
 
-    return rowToDbUserPaymentHistory(result.rows[0]);
+    return [rowToDbUserPaymentHistory(result.rows[0]), null];
   } catch (error) {
-    logging.error(
-      requestId,
-      `Failed to create user payment history for telegram_id ${params.telegram_id}`,
-      error,
-    );
-    throw error;
+    const errorMessage =
+      `Failed to create user payment history for telegram_id ${params.telegram_id}`;
+    logging.error(requestId, errorMessage, error);
+    return [null, errorMessage];
+  }
+}
+
+export async function listByTelegramUserId(
+  telegramUserId: string,
+  requestId = "system",
+): Promise<[DbUserPaymentHistory[], null] | [null, string]> {
+  const client = getClient();
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM user_payment_history 
+        WHERE telegram_id = ? 
+        ORDER BY deposited_at DESC
+      `,
+      args: [telegramUserId],
+    });
+
+    return [result.rows.map(rowToDbUserPaymentHistory), null];
+  } catch (error) {
+    const errorMessage =
+      `Failed to list payment history for user ${telegramUserId}`;
+    logging.error(requestId, errorMessage, error);
+    return [null, errorMessage];
+  }
+}
+
+export async function getUnprocessedPayments(
+  telegramUserId: string,
+  requestId = "system",
+): Promise<[DbUserPaymentHistory[], null] | [null, string]> {
+  const client = getClient();
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT * FROM user_payment_history 
+        WHERE telegram_id = ? AND processed_at IS NULL
+        ORDER BY deposited_at ASC
+      `,
+      args: [telegramUserId],
+    });
+
+    return [result.rows.map(rowToDbUserPaymentHistory), null];
+  } catch (error) {
+    const errorMessage =
+      `Failed to get unprocessed payments for user ${telegramUserId}`;
+    logging.error(requestId, errorMessage, error);
+    return [null, errorMessage];
+  }
+}
+
+export async function markAsProcessed(
+  paymentId: number,
+  requestId = "system",
+): Promise<[null, null] | [null, string]> {
+  const client = getClient();
+  try {
+    await client.execute({
+      sql: `
+        UPDATE user_payment_history 
+        SET processed_at = ?
+        WHERE id = ?
+      `,
+      args: [new Date().toISOString(), paymentId],
+    });
+
+    logging.info(requestId, "Marked payment as processed", {
+      paymentId,
+    });
+
+    return [null, null];
+  } catch (error) {
+    const errorMessage = `Failed to mark payment ${paymentId} as processed`;
+    logging.error(requestId, errorMessage, error);
+    return [null, errorMessage];
   }
 }
 
 export default {
   create,
+  listByTelegramUserId,
+  getUnprocessedPayments,
+  markAsProcessed,
 };

@@ -1,12 +1,16 @@
-import { Application, Context } from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import type {
+  Application,
+  Context,
+} from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import { walletRouter } from "./wallet.ts";
 import { healthRouter } from "./health.ts";
 import { pumpFunRouter } from "./pump-fun.ts";
 import { botRouter } from "./bot.ts";
 import { adminRouter } from "./whitelist.ts";
+import { userRouter } from "./user.ts";
 import * as logging from "../utils/logging.ts";
 import { ResponseUtil } from "./response.ts";
-import { AppContext } from "../middleware/_context.ts";
+import type { AppContext } from "../middleware/_context.ts";
 
 const notFoundHandler = (ctx: Context) => {
   const requestId = logging.getRequestId(ctx as AppContext);
@@ -39,6 +43,10 @@ export function registerRoutes(app: Application): void {
   logging.info("system", "Registering admin routes...");
   app.use(adminRouter.routes());
   app.use(adminRouter.allowedMethods());
+
+  logging.info("system", "Registering user routes...");
+  app.use(userRouter.routes());
+  app.use(userRouter.allowedMethods());
 
   logging.info("system", "Registering not found handler...");
   app.use(notFoundHandler);
