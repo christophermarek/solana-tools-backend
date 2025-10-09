@@ -17,12 +17,14 @@ import {
   listWallets,
   refreshWalletBalance,
 } from "../controllers/wallet/index.ts";
+import { createAuthenticateUserCreditsMiddleware } from "../middleware/authenticate-user-credits.ts";
 
 const router = new Router({
   prefix: "/api/v1/wallets",
 });
 
 router.use(createAuthenticateTelegramUserMiddleware());
+router.use(createAuthenticateUserCreditsMiddleware());
 
 router.get("/", listWallets);
 

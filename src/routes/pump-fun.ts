@@ -19,12 +19,14 @@ import {
   untrackMint,
 } from "../controllers/pump-fun/index.ts";
 import { createAuthenticateTelegramUserMiddleware } from "../middleware/authenticate-telegram-user.ts";
+import { createAuthenticateUserCreditsMiddleware } from "../middleware/authenticate-user-credits.ts";
 
 const router = new Router({
   prefix: "/api/v1/pump-fun",
 });
 
 router.use(createAuthenticateTelegramUserMiddleware());
+router.use(createAuthenticateUserCreditsMiddleware());
 
 router.post(
   "/create-and-buy",

@@ -1,9 +1,6 @@
-import {
-  Context,
-  Middleware,
-  Next,
-} from "https://deno.land/x/oak@v12.6.2/mod.ts";
+import type { Middleware, Next } from "https://deno.land/x/oak@v12.6.2/mod.ts";
 import * as logging from "../utils/logging.ts";
+import type { AppContext, AppState } from "./_context.ts";
 
 interface ErrorWithStatus extends Error {
   status?: number;
@@ -17,6 +14,7 @@ export enum MiddlewareErrorType {
   INVALID_API_KEY = "INVALID_API_KEY",
   USER_NOT_AUTHENTICATED = "USER_NOT_AUTHENTICATED",
   ADMIN_ROLE_REQUIRED = "ADMIN_ROLE_REQUIRED",
+  USER_CREDITS_EXPIRED = "USER_CREDITS_EXPIRED",
 }
 
 export class MiddlewareError extends Error {
@@ -47,13 +45,15 @@ function getMiddlewareErrorMessage(type: MiddlewareErrorType): string {
       return "User not authenticated";
     case MiddlewareErrorType.ADMIN_ROLE_REQUIRED:
       return "Admin role required";
+    case MiddlewareErrorType.USER_CREDITS_EXPIRED:
+      return "User credits have expired";
     default:
       return "Unknown middleware error";
   }
 }
 
-export function createErrorHandler(): Middleware {
-  return async (ctx: Context, next: Next) => {
+export function createErrorHandler(): Middleware<AppState> {
+  return async (ctx: AppContext, next: Next) => {
     try {
       await next();
     } catch (err: unknown) {

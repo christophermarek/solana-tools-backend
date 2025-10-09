@@ -8,12 +8,14 @@ import {
   listBots,
 } from "../controllers/bot/index.ts";
 import { createAuthenticateTelegramUserMiddleware } from "../middleware/authenticate-telegram-user.ts";
+import { createAuthenticateUserCreditsMiddleware } from "../middleware/authenticate-user-credits.ts";
 
 const router = new Router({
   prefix: "/api/v1/bots",
 });
 
 router.use(createAuthenticateTelegramUserMiddleware());
+router.use(createAuthenticateUserCreditsMiddleware());
 
 router.get("/", listBots);
 
