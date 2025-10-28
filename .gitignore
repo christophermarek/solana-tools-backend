@@ -4,6 +4,7 @@
 # node
 node_modules
 
+.env
 .env.*
 .env.mainnet
 .env.devnet
