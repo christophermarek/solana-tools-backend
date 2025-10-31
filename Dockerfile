@@ -1,4 +1,4 @@
-FROM denoland/deno:1.44.4
+FROM denoland/deno:latest
 
 WORKDIR /app
 
@@ -7,6 +7,9 @@ COPY import_map.json deno.json ./
 
 # Copy the rest of the application
 COPY . .
+
+# Fix permissions for deno user
+RUN chown -R deno:deno /app
 
 # Run unprivileged
 USER deno
